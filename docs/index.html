@@ -1381,7 +1381,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.4";
+const APP_VERSION="v1.5";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
@@ -1645,6 +1645,7 @@ const GROUPS=[["vrganj","borov-vrganj","ljetni-vrganj","crni-vrganj"],["rujnica"
  ["x-cortinarius-malicorius","x-cortinarius-croceus"],["x-gymnopus-dryophilus","x-gymnopus-aquosus"],["x-clavulina-rugosa","x-clavulina-coralloides"],
  ["x-ganoderma-adspersum","x-ganoderma-pfeifferi","x-ganoderma-applanatum","hrastova-sjajnica"],["x-trametes-gibbosa","x-trametes-hirsuta","x-trametes-ochracea","sarena-tvrdokoska"],
  ["x-mycena-metata","x-mycena-vitilis","x-mycena-olivaceomarginata","x-mycena-arcangeliana","x-mycena-polygramma","x-mycena-galericulata","kosoglava-sljemovka"],
+ ["siljatonogi-vrganj","kraljevski-vrganj","lazna-kraljevka"],
  ["naborana-gnojistarka","x-coprinellus-micaceus"],["x-tricholoma-ustale","x-tricholoma-fulvum"]];
 /* opasne zamjene za skraćene zapise: otrovna vrsta uvijek se prikaže uz jestivu dvojnicu */
 const ZAM_EXTRA={"x-leucopaxillus-giganteus":["x-clitocybe-phyllophila"],"krhka-brasnjaca":["x-clitocybe-phyllophila"],"x-hygrophorus-eburneus":["x-clitocybe-phyllophila"],
@@ -1666,6 +1667,8 @@ const TREES={"vrganj":["smreka","jela","bukva"],"borov-vrganj":["bor","jela"],"l
  "sivka":["bor"],"tigrasta-vitezovka":["bukva","jela"],"brezina-guba":["breza"],"modri-vrganj":["breza","bor"],"kestenjasti-vrganj":["kesten","hrast"]};
 for(const[k,v]of Object.entries(TREES))if(byId[k])byId[k].tr=v;
 if(byId["borov-vrganj"])byId["borov-vrganj"].bk="crvena";
+/* kraljevke: model ne zna kraljevski vrganj, razlikuje ih boja klobuka */
+for(const[k,v]of[["siljatonogi-vrganj","smeđa"],["kraljevski-vrganj","crvena"],["lazna-kraljevka","crvena"]])if(byId[k])byId[k].bk=v;
 if(byId["ludara"])byId["ludara"].tr=["hrast","bukva"];
 /* boja mlijeka kod rujnica i mliječnica */
 const MILK={"rujnica":"nar","smrekova-rujnica":"nar-crv","polukrvna-rujnica":"nar-crv","krvna-rujnica":"crv","lazna-rujnica":"bij-zut",
