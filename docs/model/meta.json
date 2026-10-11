@@ -1,0 +1,32 @@
+{
+ "model": "BVRA/tf_efficientnet_b0.in1k_ft_df20_224",
+ "input_size": [
+  3,
+  224,
+  224
+ ],
+ "mean": [
+  0.5,
+  0.5,
+  0.5
+ ],
+ "std": [
+  0.5,
+  0.5,
+  0.5
+ ],
+ "crop_pct": 1.0,
+ "interpolation": "bicubic",
+ "num_classes": 1604,
+ "verzija": 1,
+ "licencija": "CC BY-NC 4.0 (BVRA / Danish Fungi 2020), samo nekomercijalno",
+ "parts": [
+  "model.onnx.000",
+  "model.onnx.001"
+ ],
+ "part_sizes": [
+  12147429,
+  12147429
+ ],
+ "resize": "stretch"
+}
