@@ -3,7 +3,7 @@
 Atlas gljiva Hrvatske i vodič za branje: 396 vrsta, prepoznavanje sa slike na samom uređaju,
 indeks sezone po regijama, karta nalazišta, kviz „Opasne zamjene”, recepti i dnevnik nalaza.
 
-**Aplikacija:** https://markofrankovic-afk.github.io/gljive-hrvatske/
+**Aplikacija:** https://markofrankovic-afk.github.io/Gljive-Hrvatske/
 (na mobitelu otvori u Chromeu → izbornik → *Dodaj na početni zaslon*)
 
 Autor: **Marko Franković**
