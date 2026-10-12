@@ -1,6 +1,6 @@
 # Gljive Hrvatske
 
-Atlas gljiva Hrvatske i vodič za branje: 396 vrsta, prepoznavanje sa slike na samom uređaju,
+Atlas gljiva Hrvatske i vodič za branje: 726 vrsta, prepoznavanje sa slike na samom uređaju,
 indeks sezone po regijama, karta nalazišta, kviz „Opasne zamjene”, recepti i dnevnik nalaza.
 
 **Aplikacija:** https://markofrankovic-afk.github.io/Gljive-Hrvatske/
