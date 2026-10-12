@@ -1126,6 +1126,32 @@ for(const s of S){const b=BOOK[s.id];if(!b)continue;
 /* miris mesa iz knjige za vrste koje su već bile u atlasu */
 if(typeof BOOK_MI!=='undefined')for(const s of S)if(BOOK_MI[s.id]&&!s.mi)s.mi=BOOK_MI[s.id];
 
+/* Dopune prema vodiču „Gljive u Hrvatskoj”: narodni i drugi hrvatski nazivi (za pretraživanje) i opasne zamjene. */
+const BOOK2={
+ "blagva":{a:"carska blagva"},"biserka":{a:"biserka"},
+ "b-agaricus-arvensis":{hr:"Ovčarska pečurka",a:"lipika",z:["bijela-pupavka","pupavka"]},
+ "b-agaricus-bisporus":{hr:"Plemenita pečurka",a:"šampinjon",z:["bijela-pupavka","pupavka"]},
+ "karbolna":{a:"otrovna pečurka"},"x-leucoagaricus-leucothites":{hr:"Bjelkasta pečurkovica",z:["bijela-pupavka"]},
+ "suncanica":{a:"velika sunčanica"},"sivka":{a:"najbolja kružoliska"},"x-tricholoma-terreum":{a:"miška"},
+ "b-tricholoma-flavovirens":{hr:"Zelenkasta vitezovka",a:"Tricholoma equestre, žutača",st:"smrtno",nap:"Dugo smatrana jestivom; nakon više obroka zabilježena su teška i smrtna trovanja (raspad mišićnog tkiva). Ne jesti."},
+ "x-tricholoma-sulphureum":{a:"sumporasta vitezovka"},"modrikaca":{a:"modra koturnica",z:["rudoliska"]},
+ "obicna-srastenica":{z:["rudoliska"]},"siva-maglenka":{z:["rudoliska"]},
+ "ozujska-puzevica":{a:"ožujka, ožujska puževka"},"prijesna-mlijecnica":{a:"presnac"},"krasnica-zelena":{a:"golubača"},
+ "b-russula-integra":{hr:"Smeđokoža golubica"},"ljuta-krasnica":{a:"bljuvara"},"bukovaca":{a:"bukova krivonoška"},
+ "koprenka":{a:"crvenjača"},"cigancek":{a:"naborani ciganček"},"omphalotus":{a:"zavodljiva lisičica"},
+ "naborana-gnojistarka":{a:"jajasta gnojištarka"},"b-chroogomphus-rutilus":{hr:"Borov slinavac",a:"čavlić"},
+ "vrganj":{a:"pravi vrganj"},"borov-vrganj":{a:"crvenkasti vrganj"},"crni-vrganj":{a:"hajdinski vrganj"},
+ "ludara":{a:"sotonski vrganj, vražji vrganj"},"kovara":{z:["ludara"]},"podstavka":{a:"pustenasti baršunovac"},
+ "kostanjevka":{a:"kestenjasti baršunovac"},"crveni-hrapavac":{a:"turčin"},"prstenasti-sluzavac":{a:"osinac"},
+ "prosenjak":{a:"žuta ježevica"},"b-polyporus-confluens":{a:"zemljasta guba"},"x-fomes-fomentarius":{a:"kresiva guba"},
+ "zec-gljiva":{a:"zečarka"},"x-sparassis-crispa":{a:"kovrčasta kokica"},"divovska-puhara":{a:"golema puhara"},"smrcak":{a:"okrugli smrčak"}
+};
+for(const s of S){const b=BOOK2[s.id];if(!b)continue;
+  if(b.hr&&b.hr!==s.hr){if(s.hr!==s.lat)s.alt=(s.alt?s.alt+", ":"")+s.hr;s.hr=b.hr;s.nc=false}
+  if(b.a){const have=(s.alt||"").toLowerCase();const add=b.a.split(/,\s*/).filter(x=>!have.includes(x.toLowerCase())&&x.toLowerCase()!==s.hr.toLowerCase());if(add.length)s.alt=(s.alt?s.alt+", ":"")+add.join(", ")}
+  if(b.z){const z=s.zam||(s.zam=[]);for(const id of b.z)if(!z.includes(id))z.push(id)}
+  if(b.st)s.st=b.st;if(b.nap)s.nap=b.nap}
+
 
 const byId=Object.fromEntries(S.map(s=>[s.id,s]));
 const NOW=new Date().getMonth()+1;
@@ -1492,7 +1518,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.10";
+const APP_VERSION="v1.11";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
