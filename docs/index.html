@@ -1037,6 +1037,76 @@ const REC_EXT={
 };
 for(const s of S)if(REC_EXT[s.id]&&!(s.rec&&s.rec.length))s.rec=REC_EXT[s.id];
 
+/* Dopune prema knjizi: R. Božac, „Gljive – 600 gljiva naših krajeva” (Mladost).
+   Iz knjige su preuzeti samo hrvatski nazivi i kratke činjenice (miris, okus), svojim riječima.
+   Jestivost se iz knjige NE ublažava (knjiga je starija, neke vrste su u međuvremenu proglašene otrovnima);
+   gdje je knjiga strože ocijenila vrstu, status je pooštren. */
+const BOOK={
+ "x-phaeolepiota-aurea":{hr:"Zlatna štitarka",k:"Miris jak, podsjeća na vilin klinčac"},
+ "x-coprinellus-disseminatus":{hr:"Rasijana gnojištarka"},
+ "x-coprinopsis-lagopus":{hr:"Zečja šapa"},
+ "x-agaricus-sylvicola":{hr:"Šumska pečurka",k:"Miriše na anis; baza stručka ne smije požutjeti kao kod karbolne"},
+ "x-panaeolus-papilionaceus":{hr:"Šareni smetištar"},
+ "x-hypholoma-capnoides":{hr:"Sivolisnata panjevka",k:"Listići sivi (ne zelenkastožuti kao kod sumporače)"},
+ "x-hypholoma-marginatum":{hr:"Ljuskastonoga sumporača",k:"Okus gorak"},
+ "x-protostropharia-semiglobata":{hr:"Polukuglasta vitičarka"},
+ "x-psilocybe-coronilla":{hr:"Okrunjena vitičarka"},
+ "x-pholiota-squarrosa":{hr:"Hrapava ljuskavica",k:"Miris i okus podsjećaju na hren"},
+ "x-pholiota-lenta":{hr:"Žilava ljuskavica",k:"Okus podsjeća na rotkvicu"},
+ "x-gymnopilus-penetrans":{hr:"Razorna plamenka",k:"Okus gorak"},
+ "x-cortinarius-alboviolaceus":{hr:"Bijelo-ljubičasta koprenka"},
+ "x-cortinarius-torvus":{hr:"Tamna koprenka"},
+ "x-cortinarius-elatior":{hr:"Naborana koprenka"},
+ "x-inocybe-geophylla":{hr:"Zemljasta cjepača",k:"Neugodan, zemljast miris"},
+ "x-laccaria-proxima":{hr:"Smeđe-crvenkasta gljivica"},
+ "x-rhodocollybia-maculata":{hr:"Pjegava plosnatica",k:"Okus gorkast"},
+ "x-gymnopus-confluens":{k:"Okus blago na češnjak"},
+ "x-marasmius-rotula":{hr:"Koturasta čamavka"},
+ "x-mycena-pelianthina":{hr:"Tamnolisna šljemovka",k:"Jak miris na rotkvicu"},
+ "x-mycena-galericulata":{hr:"Naherena šljemovka",k:"Miris podsjeća na svježe krastavce ili brašno"},
+ "x-mycena-epipterygia":{hr:"Presvučena šljemovka"},
+ "x-mycena-polygramma":{hr:"Žljebonoga šljemovka"},
+ "x-mycena-tenerrima":{hr:"Nježna šljemovka"},
+ "x-mycena-vitilis":{hr:"Nitasta šljemovka"},
+ "x-tricholoma-scalpturatum":{hr:"Žućkasta vitezovka",k:"Miris i okus po brašnu"},
+ "x-tricholoma-argyraceum":{hr:"Srebrnasta vitezovka"},
+ "x-melanoleuca-cognata":{hr:"Rana gustoliska",k:"Miris po užeglom brašnu"},
+ "x-ampulloclitocybe-clavipes":{hr:"Kijačasta grlašica",k:"Uz alkohol može izazvati trovanje (kao gnojištarke)"},
+ "x-clitocybe-phyllophila":{hr:"Lisnata grlašica",k:"Slab miris na anis; sadrži muskarin"},
+ "x-lactarius-pallidus":{hr:"Blijeda mliječnica",k:"Miris na voće, okus malo ljut"},
+ "x-lactarius-quietus":{hr:"Hrastova mliječnica",k:"Miris na suho lišće ili stjenice; raste uz hrast"},
+ "x-lactarius-rufus":{hr:"Riđa mliječnica",k:"Okus nakon kratkog vremena jako ljut"},
+ "x-lactarius-necator":{hr:"Ružna mliječnica",k:"Okus ljut; mlijeko bijelo"},
+ "x-russula-ochroleuca":{hr:"Glinasta krasnica",k:"Okus blag do trpak"},
+ "x-russula-foetens":{hr:"Smrdača",k:"Neugodan, užegao miris; okus gorak i ljut",st:"otrovna",nap:"Izaziva probavne smetnje; starija literatura je navodi kao otrovnu."},
+ "x-russula-queletii":{hr:"Queletova krasnica",k:"Miris na voće, okus ljut; raste pod smrekom"},
+ "x-russula-atropurpurea":{hr:"Tamnopurpurna krasnica"},
+ "x-russula-xerampelina":{hr:"Crvena haringova krasnica",k:"Starija gljiva miriše na haringu ili rakove"},
+ "x-hygrophorus-eburneus":{hr:"Bijela puževica",k:"Klobuk i stručak jako sluzavi"},
+ "x-hygrophorus-olivaceoalbus":{hr:"Zmijolikonoga puževica"},
+ "x-gliophorus-psittacinus":{hr:"Papigasta vlažnica"},
+ "x-pleurotus-dryinus":{hr:"Hrastova krivonoška"},
+ "x-lentinellus-cochleatus":{hr:"Anisova žilavka",k:"Jak miris na anis"},
+ "x-cyanoboletus-pulverulentus":{hr:"Osuti vrganj",k:"Meso na prerezu odmah tamnoplavo pocrni"},
+ "x-phaeolus-schweinitzii":{hr:"Crnogorični rupičavac"},
+ "x-stereum-hirsutum":{hr:"Dlakava poličica"},
+ "x-schizophyllum-commune":{hr:"Obična dvolisnica"},
+ "x-lycoperdon-pratense":{hr:"Livadna puhara"},
+ "x-lycoperdon-echinatum":{hr:"Naježena puhara"},
+ "x-scleroderma-verrucosum":{hr:"Bradavičava krumpirača"},
+ "x-mutinus-caninus":{hr:"Pasji stršak",k:"Vrh prekriven smrdljivom zelenkastom sluzi"},
+ "x-cyathus-striatus":{hr:"Prugasta košarica"},
+ "x-sparassis-crispa":{k:"Ugodan miris, podsjeća na smilje"},
+ "x-kuehneromyces-mutabilis":{k:"Okus aromatičan; stručak ispod prstena ljuskav (rebrasta patuljica nema ljuske)"},
+ /* pooštren status prema knjizi */
+ "vlaknjaca":{st:"smrtno",nap:"Smrtno otrovna (muskarin). Raste u proljeće uz đurđevaču i lako se zamijeni s njom."},
+ "ljuskava-koprenka":{st:"otrovna",nap:"Sumnja se da sadrži orelanin kao planinska koprenka; ne beri."}
+};
+for(const s of S){const b=BOOK[s.id];if(!b)continue;
+  if(b.hr&&b.hr!==s.hr){if(s.hr!==s.lat)s.alt=(s.alt?s.alt+", ":"")+s.hr;s.hr=b.hr;s.nc=false}
+  if(b.k){s.kar=[b.k].concat(s.kar||[]).slice(0,4)}
+  if(b.st)s.st=b.st;if(b.nap)s.nap=b.nap;s.bz=1}
+
 
 const byId=Object.fromEntries(S.map(s=>[s.id,s]));
 const NOW=new Date().getMonth()+1;
@@ -1136,6 +1206,7 @@ function openSheet(id){
    look+rec+
    (s.ext?'<p class="small">Skraćeni zapis: vrsta je u atlasu jer je prepoznaje model za fotografije. Opis je na razini roda, a sezona i stanište prema nalazima iz srednje Europe.</p>':'')+
    (s.nc?'<p class="small">Hrvatski naziv ove vrste čeka provjeru stručnjaka.</p>':'')+
+   (s.bz?'<p class="small">Hrvatski naziv i dio opisa prema knjizi R. Božac, „Gljive – 600 gljiva naših krajeva”.</p>':'')+
    '<p class="small" style="padding-top:8px">'+(PHOTOS[s.id]?'Fotografija prikazuje tipičan izgled; gljive iste vrste mogu izgledati drukčije.':'Crtež je shematski i ne služi za određivanje.')+'</p>';
   $("#scrim").hidden=false;$("#sheet").hidden=false;$("#sheet").scrollTop=0;$("#closeSheet").focus();
   if(window.onSheetOpen)window.onSheetOpen(s);
@@ -1400,7 +1471,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.7";
+const APP_VERSION="v1.8";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
