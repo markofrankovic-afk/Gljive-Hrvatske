@@ -88,6 +88,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--surfac
 .row-scroll .chip{white-space:nowrap}
 select.sel{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);max-width:100%}
 .btn{border:0;border-radius:var(--r);padding:12px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+a.btn{display:inline-block;text-decoration:none}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .btn.ghost{background:var(--surface-2);color:var(--ink)}
 .btn.small{padding:8px 12px;font-size:.9rem}
@@ -312,6 +313,14 @@ form.log .full{grid-column:1/-1}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" id="quizStart" type="button">Pokreni kviz</button><span class="small" id="quizBest"></span></div>
     </div>
 
+    <div class="panel">
+      <span class="eyebrow">Razvoj aplikacije</span>
+      <h2>Prijedlozi i greške</h2>
+      <p>Imaš ideju što dodati, vrstu koja nedostaje, krivi opis ili grešku u prepoznavanju? Javi autoru, svaki prijedlog pomaže.</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><a class="btn" id="feedbackBtn" href="mailto:marko.frankovic@gmail.com?subject=Gljive%20Hrvatske%20%E2%80%93%20prijedlog&body=Bok%20Marko%2C%0A%0AImam%20prijedlog%20za%20aplikaciju%20Gljive%20Hrvatske%3A%0A%0A%0A%28Ako%20prijavljuje%C5%A1%20gre%C5%A1ku%3A%20%C5%A1to%20si%20radio%2C%20%C5%A1to%20se%20dogodilo%20i%20na%20kojem%20mobitelu.%29%0A">Pošalji prijedlog</a><span class="small">marko.frankovic@gmail.com</span></div>
+      <p class="small">Kod pogrešnog prepoznavanja priloži fotografije i napiši što je gljiva zapravo bila.</p>
+    </div>
+
     <h2>Zlatna pravila</h2>
     <ol class="rules">
       <li><span>Beri samo ono što sto posto poznaješ. Jedna nepoznata gljiva u košari znači da cijelu košaru nosiš determinatoru.</span></li>
@@ -387,6 +396,7 @@ form.log .full{grid-column:1/-1}
   </section>
   <footer class="credit">
     <p><strong>Gljive Hrvatske</strong> · Autor: Marko Franković</p>
+    <p>Prijedlozi i prijave grešaka: <a href="mailto:marko.frankovic@gmail.com?subject=Gljive%20Hrvatske%20%E2%80%93%20prijedlog&body=Bok%20Marko%2C%0A%0AImam%20prijedlog%20za%20aplikaciju%20Gljive%20Hrvatske%3A%0A%0A%0A%28Ako%20prijavljuje%C5%A1%20gre%C5%A1ku%3A%20%C5%A1to%20si%20radio%2C%20%C5%A1to%20se%20dogodilo%20i%20na%20kojem%20mobitelu.%29%0A">marko.frankovic@gmail.com</a></p>
     <p>Aplikaciju koristiš na vlastitu odgovornost. Opisi, prepoznavanje sa slike i recepti služe kao pomoć i ne zamjenjuju provjeru iskusnog determinatora. Autor ne odgovara za štetu nastalu branjem ili jedenjem gljiva.</p>
   </footer>
 </div>
@@ -1381,7 +1391,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.6";
+const APP_VERSION="v1.7";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
