@@ -1553,7 +1553,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.14";
+const APP_VERSION="v1.15";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -1712,6 +1712,26 @@ function initPWA(){
   if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 initPWA();
+
+/* ---------- Anonimni brojač posjeta (GoatCounter, bez kolačića i osobnih podataka) ---------- */
+(function(){
+  const GC="https://gljivehr.goatcounter.com/count";
+  const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  window.goatcounter={path:p=>(standalone?"/app":"/web")+(p||"/")};
+  const sc=document.createElement("script");sc.async=true;sc.src="https://gc.zgo.at/count.js";sc.dataset.goatcounter=GC;document.head.appendChild(sc);
+  const ev=name=>{try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:name,title:name,event:true})}catch(e){}};
+  window.gcEv=ev;
+  window.addEventListener("appinstalled",()=>ev("instalirano"));
+  const seen={};
+  document.addEventListener("click",e=>{
+    const t=e.target.closest&&e.target.closest("#tabs button,#quizStart,#feedbackBtn,#seasonMe,#installBtn,#lmRun,a[href*='kekspay']");if(!t)return;
+    if(t.id==="lmRun"){ev("prepoznavanje");return}
+    let n=t.dataset&&t.dataset.v?"zaslon-"+t.dataset.v:t.id?t.id:"keks";
+    if(seen[n])return;seen[n]=1;ev(n);
+  },true);
+  const fb=document.getElementById("feedbackBtn");
+  if(fb){const p=document.createElement("p");p.className="small";p.textContent="Aplikacija anonimno broji posjete i korištenje pojedinih dijelova (GoatCounter: bez kolačića, bez osobnih podataka, bez fotografija i lokacije), samo da autor zna koliko se koristi.";fb.closest(".panel").appendChild(p)}
+})();
 
 const LMCFG={base:"model/",ortScript:"vendor/ort/ort.wasm.min.js",mjsBase:"vendor/ort/",wasm:"vendor/ort/ort-wasm-simd-threaded.wasm",server:true};
 /* ================= Prepoznavanje na uređaju (besplatno, radi bez interneta) =================
