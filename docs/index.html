@@ -26,7 +26,7 @@ body{margin:0}
 img{max-width:100%}
 .sidx{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
 .srow{display:grid;grid-template-columns:minmax(0,9.5em) 1fr auto;gap:8px;align-items:center;font-size:.9rem}
-.srow .num{grid-column:1/-1;margin-top:-4px;font-variant-numeric:tabular-nums}
+.srow{cursor:pointer}.srow .num{grid-column:1/-1;margin-top:-4px;font-variant-numeric:tabular-nums}.srow .sdet{grid-column:1/-1;display:none;padding:4px 0 2px 8px;border-left:2px solid var(--line,#ccc)}.srow.open .sdet{display:block}.srow.open .smore{display:inline-block;transform:rotate(180deg)}
 .sbar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
 .sbar i{display:block;height:100%}
 .wphoto{margin:0 0 4px;border-radius:12px;overflow:hidden;background:var(--surface-2)}
@@ -1553,39 +1553,88 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.13";
+const APP_VERSION="v1.14";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
-const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
+/* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
+const WPOINTS=[["gk","Gorski kotar",45.40,14.80],["li","Lika",44.55,15.37],
+ ["sh","Karlovac i Kordun",45.49,15.55],["sh","Zagreb i Žumberak",45.80,15.75],["sh","Moslavina",45.50,16.75],["sh","Banovina i Posavina",45.35,16.25],
+ ["za","Zagorje",46.16,15.88],["me","Međimurje i Podravina",46.25,16.80],["me","Bilogora",45.90,17.05],["sl","Slavonija i Baranja",45.55,18.69],["sl","Papuk i Požeška kotlina",45.42,17.65],
+ ["is","Istra",45.24,13.94],["kv","Kvarner i otoci",45.33,14.44],["da","Dalmacija",43.51,16.44]];
 const LEVELS=[["Slabo","var(--grey)"],["Moguće","var(--warn)"],["Dobro","var(--ok)"],["Odlično","var(--accent)"]];
-function seasonScore(rain14,rain5,tmean){
+function seasonScore(v){
   let sc=0;
-  if(rain14>=25)sc++; if(rain14>=60)sc++;
-  if(rain5>=5)sc++;
-  if(tmean<5||tmean>24)sc=Math.max(0,sc-2); else if(tmean<8||tmean>21)sc=Math.max(0,sc-1);
+  if(v.r14>=25)sc++; if(v.r14>=60)sc++;
+  if(v.r5>=5)sc++;
+  if(v.sm!=null){if(v.sm>=0.30&&sc<3&&v.r14>=15)sc++; if(v.sm<0.15)sc=Math.max(0,sc-1)}
+  else if(v.rh!=null&&v.rh>=85&&sc<3&&v.r14>=15)sc++;
+  if(v.tm<5||v.tm>24)sc=Math.max(0,sc-2); else if(v.tm<8||v.tm>21)sc=Math.max(0,sc-1);
+  if(v.tmin!=null&&v.tmin<=-2)sc=Math.max(0,sc-1);
   return Math.min(3,sc);
+}
+const avg=a=>{a=a.filter(x=>x!=null);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
+const r1=x=>x==null?null:Math.round(x*10)/10;
+function wUrl(pts,full){
+  return "https://api.open-meteo.com/v1/forecast?latitude="+pts.map(p=>p[0]).join(",")+"&longitude="+pts.map(p=>p[1]).join(",")+
+   "&daily=precipitation_sum,temperature_2m_mean"+(full?",temperature_2m_min,temperature_2m_max&hourly=relative_humidity_2m,soil_moisture_3_to_9cm":"")+
+   "&past_days=14&forecast_days="+(full?4:1)+"&timezone=Europe%2FZagreb";
+}
+function wParse(o){
+  const D=o.daily,p=D.precipitation_sum.map(x=>x||0),past=p.slice(0,14),t=D.temperature_2m_mean.slice(0,14);
+  const v={r14:Math.round(past.reduce((a,b)=>a+b,0)),r5:Math.round(past.slice(-5).reduce((a,b)=>a+b,0)),tm:r1(avg(t.slice(-7)))};
+  if(D.temperature_2m_min){v.tmin=r1(Math.min(...D.temperature_2m_min.slice(11,15).filter(x=>x!=null)));v.tmax=r1(Math.max(...D.temperature_2m_max.slice(11,15).filter(x=>x!=null)))}
+  if(p.length>14)v.fr=Math.round(p.slice(15,18).reduce((a,b)=>a+b,0));
+  const H=o.hourly;
+  if(H){const now=Date.now(),idx=H.time.map(x=>new Date(x).getTime()).filter(x=>x<=now).length;
+    if(H.relative_humidity_2m){const rh=avg(H.relative_humidity_2m.slice(Math.max(0,idx-72),idx));v.rh=rh==null?null:Math.round(rh)}
+    if(H.soil_moisture_3_to_9cm){const sm=H.soil_moisture_3_to_9cm.slice(0,idx).filter(x=>x!=null);v.sm=sm.length?Math.round(sm[sm.length-1]*100)/100:null}}
+  v.sc=seasonScore(v);return v;
+}
+async function wFetch(pts){
+  for(const full of [true,false]){
+    try{const r=await fetch(wUrl(pts,full));if(!r.ok)continue;const j=await r.json();const arr=Array.isArray(j)?j:[j];return arr.map(wParse)}catch(e){}
+  }
+  throw new Error("weather");
 }
 async function loadSeason(){
   const box=$("#seasonIdx");if(!box)return;
-  const cached=store.get("gh-season",null);
+  const cached=store.get("gh-season2",null);
   if(cached&&Date.now()-cached.t<3*3600e3){renderSeason(cached.d,cached.t);return}
   if(!navigator.onLine){if(cached)renderSeason(cached.d,cached.t);else box.innerHTML='<p class="small">Indeks sezone učitava se kad je uređaj na internetu.</p>';return}
-  const ks=Object.keys(REG_POINT);
-  const url="https://api.open-meteo.com/v1/forecast?latitude="+ks.map(k=>REG_POINT[k][0]).join(",")+"&longitude="+ks.map(k=>REG_POINT[k][1]).join(",")+"&daily=precipitation_sum,temperature_2m_mean&past_days=14&forecast_days=1&timezone=Europe%2FZagreb";
   try{
-    const r=await fetch(url);const j=await r.json();const arr=Array.isArray(j)?j:[j];
-    const d={};ks.forEach((k,i)=>{const p=arr[i].daily.precipitation_sum.map(x=>x||0),t=arr[i].daily.temperature_2m_mean.filter(x=>x!=null);
-      const past=p.slice(0,14);const r14=past.reduce((a,b)=>a+b,0),r5=past.slice(-5).reduce((a,b)=>a+b,0),tm=t.slice(-7).reduce((a,b)=>a+b,0)/Math.max(1,t.slice(-7).length);
-      d[k]={r14:Math.round(r14),r5:Math.round(r5),tm:Math.round(tm*10)/10,sc:seasonScore(r14,r5,tm)}});
-    store.set("gh-season",{t:Date.now(),d});renderSeason(d,Date.now());
+    const res=await wFetch(WPOINTS.map(w=>[w[2],w[3]]));
+    const d=res.map((v,i)=>Object.assign(v,{k:WPOINTS[i][0],n:WPOINTS[i][1]}));
+    store.set("gh-season2",{t:Date.now(),d});renderSeason(d,Date.now());
   }catch(e){if(cached)renderSeason(cached.d,cached.t);else box.innerHTML='<p class="small">Podaci o vremenu trenutno nisu dostupni.</p>'}
 }
+function smTxt(sm){return sm==null?"":sm<0.15?"suho tlo":sm<0.25?"umjereno vlažno tlo":sm<0.35?"vlažno tlo":"mokro tlo"}
+function sRow(v,name){
+  const L=LEVELS[v.sc];
+  const short=[v.r14+" mm",v.tm+" °C"];if(v.rh!=null)short.push(v.rh+" % vlage");
+  const det=["Kiša: "+v.r14+" mm u 14 dana, "+v.r5+" mm u zadnjih 5 dana"];
+  if(v.tmin!=null)det.push("Temperatura: prosjek tjedna "+v.tm+" °C, zadnja 3 dana min "+v.tmin+" / max "+v.tmax+" °C");
+  if(v.rh!=null)det.push("Vlaga zraka (3 dana): "+v.rh+" %");
+  if(v.sm!=null)det.push("Tlo: "+smTxt(v.sm)+" ("+Math.round(v.sm*100)+" % vode)");
+  if(v.fr!=null)det.push("Prognoza kiše za 3 dana: "+v.fr+" mm");
+  return '<div class="srow" role="button" tabindex="0" onclick="this.classList.toggle(\'open\')"><span>'+esc(name)+'</span><span class="sbar"><i style="width:'+((v.sc+1)*25)+'%;background:'+L[1]+'"></i></span><strong style="color:'+L[1]+'">'+L[0]+'</strong><span class="small num">'+short.join(" · ")+' <span class="smore">▾</span></span><span class="small sdet">'+det.join("<br>")+'</span></div>';
+}
 function renderSeason(d,t){
-  const ks=state.reg?[state.reg]:Object.keys(REG);
-  $("#seasonIdx").innerHTML='<div class="season-head"><span class="eyebrow">Indeks sezone</span><span class="small">kiša 14 dana · prosj. temp.</span></div>'+
-   '<div class="sidx">'+ks.map(k=>{const v=d[k];if(!v)return"";const L=LEVELS[v.sc];
-     return '<div class="srow"><span>'+REG[k]+'</span><span class="sbar"><i style="width:'+((v.sc+1)*25)+'%;background:'+L[1]+'"></i></span><strong style="color:'+L[1]+'">'+L[0]+'</strong><span class="small num">'+v.r14+' mm · '+v.tm+' °C</span></div>'}).join("")+'</div>'+
-   '<p class="small">Procjena iz količine kiše i temperature, izvor Open-Meteo. Ažurirano '+new Date(t).toLocaleString("hr-HR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"numeric"})+'.</p>';
+  const rows=d.filter(v=>!state.reg||v.k===state.reg);
+  const me=store.get("gh-season-me",null);
+  $("#seasonIdx").innerHTML='<div class="season-head"><span class="eyebrow">Indeks sezone</span><button type="button" class="btn ghost small" id="seasonMe">📍 Moja lokacija</button></div>'+
+   '<div class="sidx">'+(me&&Date.now()-me.t<3*3600e3?sRow(me.v,"Moja lokacija"):'')+rows.map(v=>sRow(v,v.n)).join("")+'</div>'+
+   '<p class="small">Dodirni regiju za detalje. Procjena iz kiše, temperature, vlage zraka i vlage tla (model, sloj 3–9 cm), izvor Open-Meteo. Ažurirano '+new Date(t).toLocaleString("hr-HR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"numeric"})+'.</p>';
+  $("#seasonMe").onclick=seasonMe;
+}
+function seasonMe(){
+  const b=$("#seasonMe");
+  if(!navigator.geolocation){b.textContent="Lokacija nije dostupna";return}
+  b.textContent="Tražim lokaciju…";
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{const [v]=await wFetch([[r1(pos.coords.latitude),r1(pos.coords.longitude)]]);
+      store.set("gh-season-me",{t:Date.now(),v});const c=store.get("gh-season2",null);if(c)renderSeason(c.d,c.t)}
+    catch(e){b.textContent="Vrijeme nije dostupno"}
+  },()=>{b.textContent="Lokacija odbijena"},{timeout:15000,maximumAge:600000});
 }
 
 /* ---------- 2. Fotografije vrsta s Wikipedije ---------- */
@@ -1658,7 +1707,7 @@ function initPWA(){
   $("#bkExport")&&$("#bkExport").addEventListener("click",exportLog);
   $("#bkImport")&&$("#bkImport").addEventListener("change",e=>{if(e.target.files[0])importLog(e.target.files[0]);e.target.value=""});
   $("#installBtn")&&$("#installBtn").addEventListener("click",async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$("#installBtn").hidden=true});
-  $("#regChips").addEventListener("click",()=>{const c=store.get("gh-season",null);if(c)renderSeason(c.d,c.t)});
+  $("#regChips").addEventListener("click",()=>{const c=store.get("gh-season2",null);if(c)renderSeason(c.d,c.t)});
   document.querySelector('#tabs [data-v="log"]').addEventListener("click",()=>setTimeout(()=>{initMap();map&&map.invalidateSize()},50));
   if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
