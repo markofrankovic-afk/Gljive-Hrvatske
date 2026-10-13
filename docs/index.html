@@ -336,9 +336,9 @@ form.log .full{grid-column:1/-1}
         <li><strong>Prodaja i otkup:</strong> trebaju dopuštenje Ministarstva i ugovor s Hrvatskim šumama.</li>
         <li><strong>Kazne:</strong> 133 – 933 € za branje bez dozvole ili preko dopuštene količine.</li>
         <li><strong>Zaštićena područja:</strong> u nacionalnim parkovima i rezervatima vrijede posebna pravila; provjeri kod javne ustanove parka. Na područjima s afričkom svinjskom kugom izdavanje dozvola može biti obustavljeno.</li>
-        <li><strong>Ugrožene vrste:</strong> u atlasu ih filtriraš gumbom „Crveni popis”; vrste kategorije CR i EN ne beri.</li>
+        <li><strong>Strogo zaštićene gljive:</strong> Pravilnik o strogo zaštićenim vrstama štiti više od 300 vrsta gljiva, npr. blagvu i kraljevski vrganj. Njih je zabranjeno brati, a kazne po Zakonu o zaštiti prirode iznose otprilike 930 – 4000 €. U atlasu ih nađeš gumbom „Crveni popis”; vrste kategorija CR, EN i VU ne beri.</li>
       </ul>
-      <p class="small">Izvori: Pravilnik o sakupljanju zavičajnih divljih vrsta (NN 114/2017) i stručna podloga 2024. – 2026.; Hrvatske šume; Crvena knjiga gljiva Hrvatske (2008.). Stanje: listopad 2026. Pravila se mijenjaju, provjeri ih prije sezone.</p>
+      <p class="small">Izvori: Pravilnik o sakupljanju zavičajnih divljih vrsta (NN 114/2017) i stručna podloga 2024. – 2026.; Pravilnik o strogo zaštićenim vrstama (NN 144/2013, 73/2016); Hrvatske šume; Crvena knjiga gljiva Hrvatske (2008.). Stanje: listopad 2026. Pravila se mijenjaju, provjeri ih prije sezone.</p>
     </div>
 
     <div class="panel">
@@ -1180,8 +1180,11 @@ for(const s of S){const b=BOOK2[s.id];if(!b)continue;
 if(typeof RL_MAP!=='undefined')for(const s of S){const r=RL_MAP[s.id];if(!r)continue;s.rl=r[0];const nm=r[1];
   if(nm&&nm.toLowerCase()!==s.hr.toLowerCase()){if(s.nc||s.hr===s.lat){if(s.hr!==s.lat)s.alt=(s.alt?s.alt+", ":"")+s.hr;s.hr=nm;s.nc=false}else if(!(s.alt||"").toLowerCase().includes(nm.toLowerCase()))s.alt=(s.alt?s.alt+", ":"")+nm}}
 for(const s of S){if(!s.rl)continue;
-  if(s.rl==="CR"||s.rl==="EN"||s.rl==="RE"){s.rec=[];if(!/Crvenom popisu/.test(s.nap||""))s.nap=((s.nap?s.nap+" ":"")+"Ugrožena vrsta na Crvenom popisu gljiva Hrvatske: nemoj je brati, zabilježi nalaz.").trim()}
-  else if(s.rl==="VU"||s.rl==="NT"){if(!/Crvenom popisu/.test(s.nap||""))s.nap=((s.nap?s.nap+" ":"")+"Rijetka vrsta na Crvenom popisu gljiva Hrvatske: beri samo iznimno i umjereno, ostavi mlade i stare primjerke.").trim()}}
+  if(s.rl==="CR"||s.rl==="EN"||s.rl==="VU"||s.rl==="RE"){s.rec=[];if(!/Crvenom popisu/.test(s.nap||""))s.nap=((["otrovna","smrtno"].includes(s.st)&&s.nap?s.nap+" ":"")+"Ugrožena vrsta s Crvenog popisa gljiva Hrvatske; takve su vrste u pravilu strogo zaštićene i branje je zabranjeno. Zabilježi nalaz, ali je ne beri.").trim()}
+  else if(s.rl==="NT"||s.rl==="DD"){if(!/Crvenom popisu/.test(s.nap||""))s.nap=((s.nap?s.nap+" ":"")+"Rijetka vrsta s Crvenog popisa gljiva Hrvatske: najbolje je ne brati je.").trim()}}
+/* potvrđeno u izvorima kao strogo zaštićene (branje zabranjeno) */
+for(const id of ["blagva","kraljevski-vrganj","kozonoga-rupicarka"])if(byIdTmp(id))byIdTmp(id).zast=1;
+function byIdTmp(id){return S.find(x=>x.id===id)}
 
 
 const byId=Object.fromEntries(S.map(s=>[s.id,s]));
@@ -1267,7 +1270,7 @@ document.addEventListener("click",e=>{const c=e.target.closest("[data-id]");if(c
 let lastFocus=null;
 function openSheet(id){
   const s=byId[id];if(!s)return;lastFocus=document.activeElement;
-  const rlNote=s.rl?'<div class="note danger"><strong>Crveni popis gljiva Hrvatske: '+esc((typeof RL_CAT!=="undefined"&&RL_CAT[s.rl])||s.rl)+' ('+s.rl+').</strong> '+(s.rl==="CR"||s.rl==="EN"?"Nemoj je brati; nalaz zabilježi u dnevnik.":"Rijetka vrsta, beri iznimno i umjereno.")+'</div>':'';
+  const rlNote=s.rl?'<div class="note danger"><strong>Crveni popis gljiva Hrvatske: '+esc((typeof RL_CAT!=="undefined"&&RL_CAT[s.rl])||s.rl)+' ('+s.rl+').</strong> '+(["CR","EN","VU","RE"].includes(s.rl)?"Takve su vrste u pravilu strogo zaštićene: branje je zabranjeno (kazne od oko 930 €). Nalaz zabilježi u dnevnik.":"Rijetka vrsta; najbolje je ne brati je.")+'</div>':'';
   const dangerNote=s.st==="nepoznata"?'<div class="note danger"><strong>Jestivost nije procijenjena.</strong> Ne jedi ovu vrstu.</div>':s.st==="smrtno"?'<div class="note dead"><strong>Smrtno otrovna.</strong> '+esc(s.nap)+'</div>':s.st==="otrovna"?'<div class="note danger"><strong>Otrovna.</strong> '+esc(s.nap)+'</div>':s.nap?'<div class="note">'+esc(s.nap)+'</div>':'';
   const zastNote=s.zast?'<div class="note danger"><strong>Strogo zaštićena vrsta.</strong> Branje je zabranjeno.</div>':'';
   const look=s.zam.length?'<div class="d-sec"><span class="eyebrow">Ne zamijeni s</span><div class="look">'+s.zam.map(z=>byId[z]).filter(Boolean).map(z=>'<button data-id="'+z.id+'">'+pill(z.st)+'<span><strong>'+esc(z.hr)+'</strong><br><span class="lat">'+esc(z.lat)+'</span></span></button>').join("")+'</div></div>':"";
@@ -1550,7 +1553,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.12";
+const APP_VERSION="v1.13";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 const REG_POINT={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.38,16.43],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
