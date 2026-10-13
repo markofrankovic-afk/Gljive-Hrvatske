@@ -318,14 +318,16 @@ form.log .full{grid-column:1/-1}
   <section class="view" id="v-guide" hidden>
     <div class="panel quiz-cta">
       <span class="eyebrow">Vježba</span>
-      <h2>Kviz: opasne zamjene</h2>
-      <p>Deset pitanja s pravim fotografijama. Za svaki par otrovne i jestive gljive saznaš po čemu ih razlikuješ.</p>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" id="quizStart" type="button">Pokreni kviz</button><span class="small" id="quizBest"></span></div>
+      <h2>Kviz o gljivama</h2>
+      <p>Deset pitanja s pravim fotografijama. <strong>Lagano:</strong> poznate vrste. <strong>Srednje:</strong> opasne zamjene, otrovna ili jestiva. <strong>Teško:</strong> slične vrste iz istog roda i procjena jestivosti.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="quizStart" data-qstart="l" type="button">Lagano</button><button class="btn" data-qstart="s" type="button">Srednje</button><button class="btn" data-qstart="t" type="button">Teško</button></div>
+      <p class="small" id="quizBest"></p>
     </div>
 
     <div class="panel">
       <span class="eyebrow">Zakon i dozvola</span>
       <h2>Pravila branja</h2>
+      <div class="note"><strong>Ova pravila vrijede za Hrvatsku.</strong> U Bosni i Hercegovini, Sloveniji, Srbiji, Crnoj Gori i drugim državama vrijede drukčiji propisi o dozvolama, količinama i zaštićenim vrstama; provjeri ih kod lokalnih šumarija ili nadležnog ministarstva.</div>
       <p><strong>Dozvola je obavezna i besplatna.</strong> Za branje u šumama Hrvatskih šuma izdaje se online, vrijedi do 31. prosinca i nosiš je sa sobom (ispis ili na mobitelu).</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="https://nsp-dozvola.hrsume.hr/" target="_blank" rel="noopener">Izvadi dozvolu (Hrvatske šume)</a></div>
       <ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
@@ -1518,42 +1520,111 @@ const QUIZ_PAIRS=[
  ["bukova-mlijecnica","siva-krasnica","Zareži gljivu: mliječnica pušta bijelo mlijeko, krasnica nema mlijeka."]
 ];
 let Q=null;
+const QLEV={l:"Lagano",s:"Srednje",t:"Teško"};
+const QEASY=["vrganj","crni-vrganj","lisicarka","suncanica","pupavka","muhara","blagva","smrcak","bukovaca","mednjaca","pecurka","trubaca","djurdjevaca","tartuf","zelenjaca","rujnica","tintnjaca","vilin-klincac","sivka","ludara","zucara","panterovka","crveni-hrapavac","prstenasti-sluzavac","ljevkasta-lisicica","golema-pecurka","krvavi-barsunovac","sumporaca","hrcak","kraljevski-vrganj"];
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const genusOfS=s=>(s.lat||"").split(" ")[0];
 function quizPic(s){return PHOTOS[s.id]?'<img src="foto/'+encodeURIComponent(s.id)+'.jpg" alt="Fotografija gljive">':drawArt(s).replace('class="art"','class="art" style="width:100%;height:100%"')}
-function quizStart(){
-  const pairs=QUIZ_PAIRS.filter(p=>byId[p[0]]&&byId[p[1]]).sort(()=>Math.random()-.5).slice(0,10);
-  Q={i:0,score:0,res:[],items:pairs.map(p=>{const shown=Math.random()<.6?p[0]:p[1];return{pair:p,shown,opts:[p[0],p[1]].sort(()=>Math.random()-.5)}})};
-  lastFocus=document.activeElement;$("#scrim").hidden=false;$("#sheet").hidden=false;renderQuiz();
+function qKar(s){return (s.kar&&s.kar.length?s.kar.slice(0,2).join(". "):s.nap||"").replace(/\.\./g,".")}
+function quizBuild(lev){
+  if(lev==="s"){
+    const pairs=shuf(QUIZ_PAIRS.filter(p=>byId[p[0]]&&byId[p[1]])).slice(0,10);
+    return pairs.map(p=>{const shown=Math.random()<.6?p[0]:p[1];return{t:"name",shown,opts:shuf([p[0],p[1]]),expl:p[2]}});
+  }
+  const photo=Object.keys(PHOTOS).filter(id=>byId[id]);
+  if(lev==="l"){
+    const pool=QEASY.filter(id=>byId[id]&&(PHOTOS[id]||!photo.length));
+    return shuf(pool).slice(0,10).map(id=>{const g=genusOfS(byId[id]);
+      const d=shuf(pool.filter(x=>x!==id&&genusOfS(byId[x])!==g));const opts=[id];
+      for(const x of d){if(opts.length>=3)break;if(!opts.some(o=>genusOfS(byId[o])===genusOfS(byId[x])))opts.push(x)}
+      return{t:"name",shown:id,opts:shuf(opts),expl:qKar(byId[id])}});
+  }
+  /* teško: 6 pitanja "koja je ovo vrsta" (4 ponude, slične vrste) + 4 pitanja o jestivosti */
+  const partner={};QUIZ_PAIRS.forEach(p=>{if(byId[p[0]]&&byId[p[1]]){(partner[p[0]]=partner[p[0]]||[]).push([p[1],p[2]]);(partner[p[1]]=partner[p[1]]||[]).push([p[0],p[2]])}});
+  const cand=shuf(photo.filter(id=>byId[id].hr&&!byId[id].nc));
+  const items=[],used=new Set();
+  for(const id of cand){if(items.length>=6)break;const s=byId[id],g=genusOfS(s);
+    const sameG=shuf(S.filter(x=>x.id!==id&&genusOfS(x)===g&&!x.nc&&x.hr&&x.hr!==s.hr).map(x=>x.id));
+    const pr=partner[id]?partner[id][0]:null;
+    const opts=[id];if(pr)opts.push(pr[0]);for(const x of sameG){if(opts.length>=4)break;if(!opts.includes(x))opts.push(x)}
+    if(opts.length<4)continue;used.add(id);
+    items.push({t:"name",shown:id,opts:shuf(opts),expl:(pr&&pr[0]&&opts.includes(pr[0])?pr[1]+" ":"")+qKar(s)})}
+  const ed=shuf(photo.filter(id=>!used.has(id)&&["jestiva","nejestiva","otrovna","smrtno"].includes(byId[id].st)));
+  const byst={};ed.forEach(id=>(byst[byId[id].st]=byst[byId[id].st]||[]).push(id));
+  const pick=[];for(const k of shuf(Object.keys(byst)))if(byst[k].length)pick.push(byst[k].shift());
+  for(const id of ed){if(pick.length>=4)break;if(!pick.includes(id))pick.push(id)}
+  pick.slice(0,4).forEach(id=>items.push({t:"st",shown:id,opts:["jestiva","nejestiva","otrovna","smrtno"],expl:byId[id].nap||qKar(byId[id])}));
+  return shuf(items);
 }
+function quizStart(lev){
+  lev=QLEV[lev]?lev:"s";
+  Q={lev,i:0,score:0,res:[],items:quizBuild(lev)};
+  lastFocus=document.activeElement;$("#scrim").hidden=false;$("#sheet").hidden=false;renderQuiz();
+  if(window.gcEv)window.gcEv("kviz-"+lev);
+}
+function quizVerdict(sc,n){
+  const r=sc/n;
+  if(r===1)return["Majstor gljivar! 🏆","Mogao bi držati tečaj determinacije. Ipak, i majstori nose sumnjive gljive determinatoru."];
+  if(r>=.8)return["Odličan poznavatelj 👏","Znaš razlike, ali košara ipak ide determinatoru na drugo mišljenje."];
+  if(r>=.5)return["Solidno, ali još malo učenja 📚","Sumnjive gljive ostavi u šumi i ponovi pitanja na kojima si pogriješio."];
+  if(r>=.3)return["Hmm… 🤔","Bolje da u šumu ideš s nekim iskusnim. I s ovom aplikacijom."];
+  return["Molim te, ne beri gljive bez ove aplikacije 😅","Zapravo, nemoj ih ni dirati. Šampinjoni u dućanu su sasvim fini."];
+}
+function quizBestTxt(){return Object.keys(QLEV).map(k=>{const b=store.get("gh-quiz-best-"+k,k==="s"?store.get("gh-quiz-best",null):null);return b==null?"":QLEV[k]+" "+b+"/10"}).filter(Boolean).join(" · ")}
 function renderQuiz(){
-  const it=Q.items[Q.i],done=Q.i>=Q.items.length;
+  const it=Q.items[Q.i],done=Q.i>=Q.items.length,n=Q.items.length;
   const prog='<div class="quiz-prog">'+Q.items.map((x,j)=>'<i class="'+(j<Q.res.length?(Q.res[j]?"ok":"no"):(j===Q.i?"cur":""))+'"></i>').join("")+'</div>';
-  let h='<div class="sheet-bar"><span class="eyebrow">Kviz: opasne zamjene</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+prog;
+  let h='<div class="sheet-bar"><span class="eyebrow">Kviz · '+QLEV[Q.lev]+'</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+prog;
   if(done){
-    const best=Math.max(Q.score,+store.get("gh-quiz-best",0));store.set("gh-quiz-best",best);$("#quizBest").textContent="Najbolji rezultat: "+best+" / 10";
-    h+='<div class="d-sec" style="text-align:center"><h2 id="dName">'+Q.score+' / '+Q.items.length+'</h2><p>'+(Q.score===Q.items.length?"Odlično. Ipak, i najbolji berači nose nepoznatu gljivu determinatoru.":Q.score>=7?"Dobro. Ponovi pitanja na kojima si pogriješio.":"Ove razlike vrijedi naučiti prije branja. Pokušaj ponovno.")+'</p><div><button class="btn" id="quizAgain" type="button">Nova runda</button></div></div>';
+    const k="gh-quiz-best-"+Q.lev,prev=+store.get(k,Q.lev==="s"?store.get("gh-quiz-best",0):0),best=Math.max(Q.score,prev);store.set(k,best);
+    const t=$("#quizBest");if(t)t.textContent="Najbolje: "+quizBestTxt();
+    const [v1,v2]=quizVerdict(Q.score,n);
+    h+='<div class="d-sec" style="text-align:center"><h2 id="dName">'+Q.score+' / '+n+'</h2><p style="font-size:1.15rem;font-weight:700;margin:.2em 0">'+v1+'</p><p>'+v2+'</p>'+(Q.score>prev&&prev>0?'<p class="small">Novi osobni rekord na ovoj razini!</p>':'')+
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="quizAgain" type="button">Nova runda</button><button class="btn ghost" id="quizShare" type="button">Podijeli rezultat</button></div>'+
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px">'+Object.keys(QLEV).filter(k=>k!==Q.lev).map(k=>'<button class="btn ghost small" type="button" data-qlev="'+k+'">'+QLEV[k]+'</button>').join("")+'</div><p class="small" id="quizShareMsg"></p></div>';
   }else{
     const s=byId[it.shown];
-    h+='<div class="d-sec"><h2 id="dName">Koja je ovo gljiva?</h2><div class="quiz-img">'+quizPic(s)+'</div><div class="quiz-opts">'+it.opts.map(id=>{const o=byId[id];let cls="";if(it.ans){if(id===it.shown)cls=" right";else if(id===it.ans)cls=" wrong"}
-      return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+id+'"'+(it.ans?' disabled':'')+'><span>'+esc(o.hr)+'<br><span class="lat" style="font-weight:400">'+esc(o.lat)+'</span></span>'+(it.ans?pill(o.st):'')+'</button>'}).join("")+'</div>';
-    if(it.ans){const ok=it.ans===it.shown;
-      h+='<div class="note '+(ok?"":"danger")+'"><strong>'+(ok?"Točno.":"Netočno, ovo je "+esc(s.hr)+".")+'</strong> '+esc(it.pair[2])+'</div><div><button class="btn" id="quizNext" type="button">'+(Q.i===Q.items.length-1?"Rezultat":"Sljedeće")+'</button></div>'}
+    const q=it.t==="st"?"Je li ova gljiva jestiva?":"Koja je ovo gljiva?";
+    h+='<div class="d-sec"><h2 id="dName">'+q+'</h2><div class="quiz-img">'+quizPic(s)+'</div><div class="quiz-opts">';
+    if(it.t==="st"){
+      h+=it.opts.map(st=>{let cls="";if(it.ans){if(st===s.st)cls=" right";else if(st===it.ans)cls=" wrong"}
+        return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+st+'"'+(it.ans?' disabled':'')+'><span>'+ST[st]+'</span></button>'}).join("");
+    }else{
+      h+=it.opts.map(id=>{const o=byId[id];let cls="";if(it.ans){if(id===it.shown)cls=" right";else if(id===it.ans)cls=" wrong"}
+        return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+id+'"'+(it.ans?' disabled':'')+'><span>'+esc(o.hr)+'<br><span class="lat" style="font-weight:400">'+esc(o.lat)+'</span></span>'+(it.ans?pill(o.st):'')+'</button>'}).join("");
+    }
+    h+='</div>';
+    if(it.ans){const ok=it.t==="st"?it.ans===s.st:it.ans===it.shown;
+      const head=ok?"Točno.":(it.t==="st"?"Netočno, "+esc(s.hr)+" je: "+ST[s.st].toLowerCase()+".":"Netočno, ovo je "+esc(s.hr)+".");
+      h+='<div class="note '+(ok?"":"danger")+'"><strong>'+head+'</strong> '+esc(it.expl||"")+'</div><div><button class="btn" id="quizNext" type="button">'+(Q.i===n-1?"Rezultat":"Sljedeće")+'</button></div>'}
     h+='</div>';
   }
   $("#sheet").innerHTML=h;$("#sheet").scrollTop=0;
 }
-$("#quizStart").addEventListener("click",quizStart);
+async function quizShare(){
+  const url="https://markofrankovic-afk.github.io/Gljive-Hrvatske/";
+  const txt="Imam "+Q.score+"/"+Q.items.length+" na razini „"+QLEV[Q.lev]+"” u kvizu Gljive Hrvatske 🍄 Probaj i ti:";
+  const m=$("#quizShareMsg");
+  try{if(navigator.share){await navigator.share({title:"Kviz Gljive Hrvatske",text:txt,url});return}
+    await navigator.clipboard.writeText(txt+" "+url);if(m)m.textContent="Tekst je kopiran, zalijepi ga u grupu ili poruku."}
+  catch(e){if(m&&e&&e.name!=="AbortError")m.textContent=txt+" "+url}
+  if(window.gcEv)window.gcEv("kviz-podijeli");
+}
+document.querySelectorAll("[data-qstart]").forEach(b=>b.addEventListener("click",()=>quizStart(b.dataset.qstart)));
 $("#kekstagCopy")&&$("#kekstagCopy").addEventListener("click",async()=>{const m=$("#kekstagMsg");try{await navigator.clipboard.writeText("#markof355");m.textContent="#kekstag je kopiran."}catch(e){m.textContent="Kopiraj ručno: #markof355"}});
 
 $("#sheet").addEventListener("click",e=>{
   if(!Q||!e.target.closest)return;
   const o=e.target.closest("[data-qopt]");
-  if(o&&!Q.items[Q.i].ans){const it=Q.items[Q.i];it.ans=o.dataset.qopt;const ok=it.ans===it.shown;Q.res.push(ok);if(ok)Q.score++;renderQuiz();return}
+  if(o&&!Q.items[Q.i].ans){const it=Q.items[Q.i];it.ans=o.dataset.qopt;const ok=it.t==="st"?it.ans===byId[it.shown].st:it.ans===it.shown;Q.res.push(ok);if(ok)Q.score++;renderQuiz();return}
   if(e.target.id==="quizNext"){Q.i++;renderQuiz();return}
-  if(e.target.id==="quizAgain"){quizStart();return}
+  if(e.target.id==="quizAgain"){quizStart(Q.lev);return}
+  if(e.target.id==="quizShare"){quizShare();return}
+  const lv=e.target.closest("[data-qlev]");if(lv){quizStart(lv.dataset.qlev);return}
 });
-(()=>{const b=+store.get("gh-quiz-best",0);if(b)$("#quizBest").textContent="Najbolji rezultat: "+b+" / 10"})();
+(()=>{const t=quizBestTxt();if(t)$("#quizBest").textContent="Najbolje: "+t})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.15";
+const APP_VERSION="v1.16";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -1622,17 +1693,25 @@ function renderSeason(d,t){
   const rows=d.filter(v=>!state.reg||v.k===state.reg);
   const me=store.get("gh-season-me",null);
   $("#seasonIdx").innerHTML='<div class="season-head"><span class="eyebrow">Indeks sezone</span><button type="button" class="btn ghost small" id="seasonMe">📍 Moja lokacija</button></div>'+
-   '<div class="sidx">'+(me&&Date.now()-me.t<3*3600e3?sRow(me.v,"Moja lokacija"):'')+rows.map(v=>sRow(v,v.n)).join("")+'</div>'+
+   '<div class="sidx">'+(me&&Date.now()-me.t<3*3600e3?sRow(me.v,me.place?"📍 "+me.place:"Moja lokacija"):'')+rows.map(v=>sRow(v,v.n)).join("")+'</div>'+
    '<p class="small">Dodirni regiju za detalje. Procjena iz kiše, temperature, vlage zraka i vlage tla (model, sloj 3–9 cm), izvor Open-Meteo. Ažurirano '+new Date(t).toLocaleString("hr-HR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"numeric"})+'.</p>';
   $("#seasonMe").onclick=seasonMe;
+}
+/* Naziv mjesta iz OpenStreetMapa (Nominatim); koordinate se zaokružuju na ~1 km i šalju samo na klik */
+async function placeName(la,lo){
+  try{const r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=hr&lat="+la.toFixed(2)+"&lon="+lo.toFixed(2));
+    if(!r.ok)return null;const j=await r.json(),a=j.address||{};
+    const n=a.village||a.town||a.city||a.hamlet||a.suburb||a.municipality||a.county||null;
+    return n?(n.length>28?n.slice(0,27)+"…":n):null}catch(e){return null}
 }
 function seasonMe(){
   const b=$("#seasonMe");
   if(!navigator.geolocation){b.textContent="Lokacija nije dostupna";return}
   b.textContent="Tražim lokaciju…";
   navigator.geolocation.getCurrentPosition(async pos=>{
-    try{const [v]=await wFetch([[r1(pos.coords.latitude),r1(pos.coords.longitude)]]);
-      store.set("gh-season-me",{t:Date.now(),v});const c=store.get("gh-season2",null);if(c)renderSeason(c.d,c.t)}
+    try{const la=pos.coords.latitude,lo=pos.coords.longitude;
+      const [[v],place]=await Promise.all([wFetch([[r1(la),r1(lo)]]),placeName(la,lo)]);
+      store.set("gh-season-me",{t:Date.now(),v,place});const c=store.get("gh-season2",null);if(c)renderSeason(c.d,c.t)}
     catch(e){b.textContent="Vrijeme nije dostupno"}
   },()=>{b.textContent="Lokacija odbijena"},{timeout:15000,maximumAge:600000});
 }
@@ -1724,7 +1803,7 @@ initPWA();
   window.addEventListener("appinstalled",()=>ev("instalirano"));
   const seen={};
   document.addEventListener("click",e=>{
-    const t=e.target.closest&&e.target.closest("#tabs button,#quizStart,#feedbackBtn,#seasonMe,#installBtn,#lmRun,a[href*='kekspay']");if(!t)return;
+    const t=e.target.closest&&e.target.closest("#tabs button,#feedbackBtn,#seasonMe,#installBtn,#lmRun,a[href*='kekspay']");if(!t)return;
     if(t.id==="lmRun"){ev("prepoznavanje");return}
     let n=t.dataset&&t.dataset.v?"zaslon-"+t.dataset.v:t.id?t.id:"keks";
     if(seen[n])return;seen[n]=1;ev(n);
