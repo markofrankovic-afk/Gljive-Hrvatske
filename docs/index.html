@@ -392,6 +392,18 @@ form.log .full{grid-column:1/-1}
     <div class="phone"><span>Centar za kontrolu otrovanja, IMI Zagreb, 0–24</span><strong>01 2348 342</strong></div>
     <div class="note">U bolnicu ponesi ostatke gljiva, otpatke od čišćenja ili povraćeni sadržaj. Reci koliko je sati prošlo od obroka i tko je još jeo.</div>
 
+    <div class="panel">
+      <span class="eyebrow">Sigurnost</span>
+      <h3>Psihoaktivne („čarobne”) gljive</h3>
+      <p>Gljive s psilocibinom, npr. <em>Psilocybe semilanceata</em>, <em>Psilocybe serbica</em> i neke vrste roda <em>Panaeolus</em>, rastu i u Hrvatskoj. <strong>Branje, posjedovanje i dijeljenje zakonom su zabranjeni</strong> (Zakon o suzbijanju zlouporabe droga), a nisu ni jestive.</p>
+      <ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li><strong>Najveća opasnost su zamjene.</strong> Male smeđe gljive s livada i trulog drva teško razlikuju i stručnjaci. Među njima su smrtno otrovne patuljice (<em>Galerina</em>) i sitne gljive roda <em>Conocybe/Pholiotina</em> s istim otrovom kao zelena pupavka, te cjepače (<em>Inocybe</em>) s muskarinom.</li>
+        <li><strong>Pravilo:</strong> male smeđe gljive ne beri ni za kakvu svrhu.</li>
+        <li><strong>Ako je netko (posebno dijete) pojeo nepoznatu malu gljivu:</strong> odmah nazovi 112 ili Centar za kontrolu otrovanja (01 2348 342), ponesi ostatak gljive i reci kada je pojedena. Simptomi trovanja smrtno otrovnim vrstama kreću tek nakon 6–24 sata.</li>
+      </ul>
+      <p class="small">U atlasu su takve vrste označene oznakom „Psihoaktivna · zabranjena” i opisane samo toliko da ih prepoznaš i izbjegneš.</p>
+    </div>
+
     <div class="note danger"><strong>Odgovornost.</strong> Aplikaciju koristiš na vlastitu odgovornost. Nijedna aplikacija ni fotografija ne mogu sa sigurnošću potvrditi da je gljiva jestiva. Autor aplikacije, Marko Franković, ne odgovara za štetu nastalu branjem ili jedenjem gljiva.</div>
 
     <h2>Gljivarska društva</h2>
@@ -1204,6 +1216,22 @@ for(const s of S){if(!s.rl)continue;
 for(const id of ["blagva","kraljevski-vrganj","kozonoga-rupicarka"])if(byIdTmp(id))byIdTmp(id).zast=1;
 function byIdTmp(id){return S.find(x=>x.id===id)}
 
+/* Psihoaktivne gljive: samo radi prepoznavanja i izbjegavanja. Bez sezone, recepata i uputa za branje. */
+const PSI_NAP="Psihoaktivna gljiva (sadrži psilocibin). Branje, posjedovanje i dijeljenje zabranjeni su Zakonom o suzbijanju zlouporabe droga. Nije jestiva: može izazvati paniku, psihozu i nezgode, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama (Galerina) i sitnim gljivama roda Conocybe/Pholiotina.";
+const PSI_KAR=["Mala smeđa gljiva tamnog otiska spora","Bez mikroskopa se ne može pouzdano razlikovati od smrtno otrovnih malih smeđih gljiva","Psihoaktivna i zakonom zabranjena: ne beri je i ne diraj"];
+const PSI_ZAM=["galerina","b-pholiotina-blattaria","vlaknjaca"];
+const PSI_NEW=[
+ {id:"p-psilocybe-semilanceata",hr:"Šiljasta golokapica",nc:true,lat:"Psilocybe semilanceata",shape:"conical",cap:"#9a8058",sub:"tlo",stan:"Travnjaci i pašnjaci."},
+ {id:"p-psilocybe-serbica",hr:"Psilocybe serbica",lat:"Psilocybe serbica",shape:"convex",cap:"#8a6a48",sub:"drvo",stan:"Šumski otpad i trulo drvo."},
+ {id:"p-psilocybe-cyanescens",hr:"Psilocybe cyanescens",lat:"Psilocybe cyanescens",shape:"convex",cap:"#a07a4a",sub:"drvo",stan:"Drvna sječka i trulo drvo."},
+ {id:"p-panaeolus-cinctulus",hr:"Panaeolus cinctulus",lat:"Panaeolus cinctulus",shape:"conical",cap:"#7a6248",sub:"tlo",stan:"Gnojena tla i balega."}
+];
+for(const p of PSI_NEW){if(S.some(x=>x.lat===p.lat))continue;
+  S.push(Object.assign({st:"otrovna",m:[],reg:["gk","li","sh","za","me","sl","is","kv","da"],hy:"listici",ring:0,volva:0,spore:"tamnosmeđi do ljubičastocrni",stem:"#d8cbb4",kar:PSI_KAR,nap:PSI_NAP,zam:PSI_ZAM,rec:[],ext:1,psi:1},p))}
+/* postojeći zapisi roda Panaeolus: neke vrste i nalazi sadrže psihoaktivne tvari */
+for(const s of S){if(s.psi||!/^Panaeolus /.test(s.lat)||/semiovatus/.test(s.lat))continue;
+  s.rec=[];if(!/psihoaktiv/.test(s.nap||""))s.nap=((s.nap?s.nap+" ":"")+"Rod Panaeolus: u nekim vrstama i nalazima utvrđene su psihoaktivne tvari. Nije jestiva; ne beri je.").trim()}
+
 
 const byId=Object.fromEntries(S.map(s=>[s.id,s]));
 const NOW=new Date().getMonth()+1;
@@ -1270,7 +1298,7 @@ function filtered(){
   return S.filter(s=>(!state.rl||s.rl)&&(state.rl||!state.month||s.m.includes(state.month))&&(!state.reg||s.reg.includes(state.reg))&&(!state.st.size||state.st.has(s.st))&&(!q||norm(s.hr+" "+s.lat+" "+(s.alt||"")).includes(q)));
 }
 function cardHTML(s){
-  return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
+  return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
 }
 function renderList(){
   const r=filtered();
@@ -1290,13 +1318,14 @@ function openSheet(id){
   const s=byId[id];if(!s)return;lastFocus=document.activeElement;
   const rlNote=s.rl?'<div class="note danger"><strong>Crveni popis gljiva Hrvatske: '+esc((typeof RL_CAT!=="undefined"&&RL_CAT[s.rl])||s.rl)+' ('+s.rl+').</strong> '+(["CR","EN","VU","RE"].includes(s.rl)?"Takve su vrste u pravilu strogo zaštićene: branje je zabranjeno (kazne od oko 930 €). Nalaz zabilježi u dnevnik.":"Rijetka vrsta; najbolje je ne brati je.")+'</div>':'';
   const dangerNote=s.st==="nepoznata"?'<div class="note danger"><strong>Jestivost nije procijenjena.</strong> Ne jedi ovu vrstu.</div>':s.st==="smrtno"?'<div class="note dead"><strong>Smrtno otrovna.</strong> '+esc(s.nap)+'</div>':s.st==="otrovna"?'<div class="note danger"><strong>Otrovna.</strong> '+esc(s.nap)+'</div>':s.nap?'<div class="note">'+esc(s.nap)+'</div>':'';
+  const psiNote=s.psi?'<div class="note dead"><strong>Psihoaktivna gljiva, zakonom zabranjena.</strong> Branje, posjedovanje i dijeljenje su kažnjivi. Ako je netko pojeo nepoznatu malu gljivu, odmah nazovi 112 ili Centar za kontrolu otrovanja (01 2348 342) i ponesi ostatak gljive.</div>':'';
   const zastNote=s.zast?'<div class="note danger"><strong>Strogo zaštićena vrsta.</strong> Branje je zabranjeno.</div>':'';
   const look=s.zam.length?'<div class="d-sec"><span class="eyebrow">Ne zamijeni s</span><div class="look">'+s.zam.map(z=>byId[z]).filter(Boolean).map(z=>'<button data-id="'+z.id+'">'+pill(z.st)+'<span><strong>'+esc(z.hr)+'</strong><br><span class="lat">'+esc(z.lat)+'</span></span></button>').join("")+'</div></div>':"";
   const rec=s.rec&&s.rec.length?'<div class="d-sec"><span class="eyebrow">Priprema</span>'+s.rec.map(r=>'<div class="recipe"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'</div>':"";
   $("#sheet").innerHTML='<div class="sheet-bar"><span></span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
-   '<div class="d-head">'+art(s)+'<div style="min-width:0;display:flex;flex-direction:column;gap:4px"><h2 id="dName"'+(s.hr===s.lat?' style="font-style:italic"':'')+'>'+esc(s.hr)+'</h2><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span>'+(s.alt?'<span class="small">Zove se i: '+esc(s.alt)+'</span>':'')+'<div class="line" style="display:flex;gap:6px;flex-wrap:wrap">'+pill(s.st)+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+'</div></div></div>'+
+   '<div class="d-head">'+art(s)+'<div style="min-width:0;display:flex;flex-direction:column;gap:4px"><h2 id="dName"'+(s.hr===s.lat?' style="font-style:italic"':'')+'>'+esc(s.hr)+'</h2><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span>'+(s.alt?'<span class="small">Zove se i: '+esc(s.alt)+'</span>':'')+'<div class="line" style="display:flex;gap:6px;flex-wrap:wrap">'+pill(s.st)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+'</div></div></div>'+
    '<div id="dPhoto">'+photoFigure(s)+'</div><div class="d-sec"><span class="eyebrow">Glavne karakteristike</span><ul class="keyf">'+s.kar.map(k=>'<li>'+esc(k)+'</li>').join("")+'</ul></div>'+
-   (dangerNote||zastNote||rlNote?'<div class="d-sec">'+rlNote+zastNote+dangerNote+'</div>':'')+
+   (psiNote||dangerNote||zastNote||rlNote?'<div class="d-sec">'+psiNote+rlNote+zastNote+dangerNote+'</div>':'')+
    (s.k?'<div class="d-sec"><span class="eyebrow">Opis</span><dl class="morph"><dt>Klobuk</dt><dd>'+esc(s.k.klobuk)+'</dd><dt>Ispod</dt><dd>'+esc(s.k.himenofor)+'</dd><dt>Stručak</dt><dd>'+esc(s.k.strucak)+'</dd><dt>Meso</dt><dd>'+esc(s.k.meso)+'</dd>'+(s.spore?'<dt>Spore</dt><dd>Otisak: '+esc(s.spore)+'</dd>':'')+'</dl></div>':'')+
    (s.gdkb?'<div class="d-sec"><span class="eyebrow">Opširnije</span><a class="gd" href="http://gdkb.hr/baza-gljiva/'+encodeURIComponent(s.gdkb)+'/" target="_blank" rel="noopener">Opis i fotografije u bazi Gljivarskog društva Kamilo Blagaić ↗</a></div>':'')+
    '<div class="d-sec"><span class="eyebrow">Sezona</span><div class="cal">'+MONTHS.map((m,i)=>'<span class="'+(s.m.includes(i+1)?"on":"")+'">'+m+'</span>').join("")+'</div></div>'+
@@ -1537,6 +1566,8 @@ const QUIZ_PAIRS=[
 ];
 let Q=null;
 const QLEV={l:"Lagano",s:"Srednje",t:"Teško"};
+const QLBM={livada:"Da, ako raste na livadi",miris:"Da, ako nema neugodan miris",ne:"Ne, male smeđe gljive se ne beru"};
+const qOk=it=>it.t==="st"?it.ans===byId[it.shown].st:it.t==="lbm"?it.ans==="ne":it.ans===it.shown;
 const QEASY=["vrganj","crni-vrganj","lisicarka","suncanica","pupavka","muhara","blagva","smrcak","bukovaca","mednjaca","pecurka","trubaca","djurdjevaca","tartuf","zelenjaca","rujnica","tintnjaca","vilin-klincac","sivka","ludara","zucara","panterovka","crveni-hrapavac","prstenasti-sluzavac","ljevkasta-lisicica","golema-pecurka","krvavi-barsunovac","sumporaca","hrcak","kraljevski-vrganj"];
 const shuf=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
 const genusOfS=s=>(s.lat||"").split(" ")[0];
@@ -1570,6 +1601,7 @@ function quizBuild(lev){
   const pick=[];for(const k of shuf(Object.keys(byst)))if(byst[k].length)pick.push(byst[k].shift());
   for(const id of ed){if(pick.length>=4)break;if(!pick.includes(id))pick.push(id)}
   pick.slice(0,4).forEach(id=>items.push({t:"st",shown:id,opts:["jestiva","nejestiva","otrovna","smrtno"],expl:byId[id].nap||qKar(byId[id])}));
+  if(byId.galerina){items.length=Math.min(items.length,9);items.push({t:"lbm",shown:"galerina",opts:["livada","miris","ne"],expl:"Ovo je rebrasta patuljica (Galerina marginata), smrtno otrovna. Male smeđe gljive, bilo s livade ili s drva, ne beru se ni za kakvu svrhu: među njima su smrtno otrovne vrste, a i psihoaktivne su zakonom zabranjene i nisu jestive."})}
   return shuf(items);
 }
 function quizStart(lev){
@@ -1600,9 +1632,12 @@ function renderQuiz(){
       '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px">'+Object.keys(QLEV).filter(k=>k!==Q.lev).map(k=>'<button class="btn ghost small" type="button" data-qlev="'+k+'">'+QLEV[k]+'</button>').join("")+'</div><p class="small" id="quizShareMsg"></p></div>';
   }else{
     const s=byId[it.shown];
-    const q=it.t==="st"?"Je li ova gljiva jestiva?":"Koja je ovo gljiva?";
+    const q=it.t==="st"?"Je li ova gljiva jestiva?":it.t==="lbm"?"Mala smeđa gljiva: smiješ li je brati?":"Koja je ovo gljiva?";
     h+='<div class="d-sec"><h2 id="dName">'+q+'</h2><div class="quiz-img">'+quizPic(s)+'</div><div class="quiz-opts">';
-    if(it.t==="st"){
+    if(it.t==="lbm"){
+      h+=it.opts.map(k=>{let cls="";if(it.ans){if(k==="ne")cls=" right";else if(k===it.ans)cls=" wrong"}
+        return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+k+'"'+(it.ans?' disabled':'')+'><span>'+QLBM[k]+'</span></button>'}).join("");
+    }else if(it.t==="st"){
       h+=it.opts.map(st=>{let cls="";if(it.ans){if(st===s.st)cls=" right";else if(st===it.ans)cls=" wrong"}
         return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+st+'"'+(it.ans?' disabled':'')+'><span>'+ST[st]+'</span></button>'}).join("");
     }else{
@@ -1610,8 +1645,8 @@ function renderQuiz(){
         return '<button class="quiz-opt'+cls+'" type="button" data-qopt="'+id+'"'+(it.ans?' disabled':'')+'><span>'+esc(o.hr)+'<br><span class="lat" style="font-weight:400">'+esc(o.lat)+'</span></span>'+(it.ans?pill(o.st):'')+'</button>'}).join("");
     }
     h+='</div>';
-    if(it.ans){const ok=it.t==="st"?it.ans===s.st:it.ans===it.shown;
-      const head=ok?"Točno.":(it.t==="st"?"Netočno, "+esc(s.hr)+" je: "+ST[s.st].toLowerCase()+".":"Netočno, ovo je "+esc(s.hr)+".");
+    if(it.ans){const ok=qOk(it);
+      const head=ok?"Točno.":it.t==="lbm"?"Netočno.":(it.t==="st"?"Netočno, "+esc(s.hr)+" je: "+ST[s.st].toLowerCase()+".":"Netočno, ovo je "+esc(s.hr)+".");
       h+='<div class="note '+(ok?"":"danger")+'"><strong>'+head+'</strong> '+esc(it.expl||"")+'</div><div><button class="btn" id="quizNext" type="button">'+(Q.i===n-1?"Rezultat":"Sljedeće")+'</button></div>'}
     h+='</div>';
   }
@@ -1632,7 +1667,7 @@ $("#kekstagCopy")&&$("#kekstagCopy").addEventListener("click",async()=>{const m=
 $("#sheet").addEventListener("click",e=>{
   if(!Q||!e.target.closest)return;
   const o=e.target.closest("[data-qopt]");
-  if(o&&!Q.items[Q.i].ans){const it=Q.items[Q.i];it.ans=o.dataset.qopt;const ok=it.t==="st"?it.ans===byId[it.shown].st:it.ans===it.shown;Q.res.push(ok);if(ok)Q.score++;renderQuiz();return}
+  if(o&&!Q.items[Q.i].ans){const it=Q.items[Q.i];it.ans=o.dataset.qopt;const ok=qOk(it);Q.res.push(ok);if(ok)Q.score++;renderQuiz();return}
   if(e.target.id==="quizNext"){Q.i++;renderQuiz();return}
   if(e.target.id==="quizAgain"){quizStart(Q.lev);return}
   if(e.target.id==="quizShare"){quizShare();return}
@@ -1640,7 +1675,7 @@ $("#sheet").addEventListener("click",e=>{
 });
 (()=>{const t=quizBestTxt();if(t)$("#quizBest").textContent="Najbolje: "+t})();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.18";
+const APP_VERSION="v1.19";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2083,8 +2118,9 @@ function renderLocal(){
   if(answered&&best&&(best.rel<0.25||!best.model))h+='<div class="note danger"><strong>Tvoji odgovori isključuju prvi prijedlog modela.</strong> Ispod su slične vrste iz atlasa: usporedi ih s gljivom, odgovori na preostala pitanja ili koristi ključ po obilježjima.</div>';
   if(LR.qa.rm==="ne"&&LR.cands.some(c=>isParasol(c.s)&&c.w>=0.05))h+='<div class="note danger"><strong>Nepomičan prsten: to vjerojatno nije sunčanica.</strong> Kod odraslih sunčanica prsten slobodno klizi po stručku. Ne jedi je dok je ne pregleda determinator; napravi i otisak spora (bijel ili zelenkast).</div>';
   if(LR.maxp<0.35)h+='<div class="note">Model nije siguran (najveća vjerojatnost '+Math.round(LR.maxp*100)+' %). Snimi gljivu izbliza, odozdo i cijelu s dnom, pa pokušaj ponovno.</div>';
+  if(top.some(c=>c.s.psi))h+='<div class="note dead"><strong>Moguća psihoaktivna vrsta.</strong> Takve su gljive zakonom zabranjene i nisu jestive, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama. Ne beri ih.</div>';
   if(top.some(c=>["otrovna","smrtno"].includes(c.s.st))||danger.length)h+='<div class="warnbar">Među mogućim vrstama ima otrovnih. Ne beri za jelo bez provjere uživo.</div>';
-  h+='<span class="eyebrow">Najvjerojatnije</span>'+top.map(c=>'<div class="cand"><span class="conf num">'+Math.round(c.rel*100)+' %</span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
+  h+='<span class="eyebrow">Najvjerojatnije</span>'+top.map(c=>'<div class="cand"><span class="conf num">'+Math.round(c.rel*100)+' %</span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.kar[0]||"")+'</div>').join("");
   const qs=pickQuestions().filter(q=>LR.qa[q.k]===undefined||true);
   if(qs.length){
