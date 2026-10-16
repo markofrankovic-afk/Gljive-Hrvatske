@@ -26,7 +26,7 @@ body{margin:0}
 img{max-width:100%}
 .sidx{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
 .srow{display:grid;grid-template-columns:minmax(0,9.5em) 1fr auto;gap:8px;align-items:center;font-size:.9rem}
-.srow{cursor:pointer}.srow .num{grid-column:1/-1;margin-top:-4px;font-variant-numeric:tabular-nums}.srow .sdet{grid-column:1/-1;display:none;padding:4px 0 2px 8px;border-left:2px solid var(--line,#ccc)}.srow.open .sdet{display:block}.srow.open .smore{display:inline-block;transform:rotate(180deg)}
+.srow{cursor:pointer}.fcstrip{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}.fcstrip span{display:flex;flex-direction:column;align-items:center;font-size:.72rem;gap:2px;min-width:30px}.fcstrip i{display:block;width:26px;height:14px;border-radius:3px}.srow .num{grid-column:1/-1;margin-top:-4px;font-variant-numeric:tabular-nums}.srow .sdet{grid-column:1/-1;display:none;padding:4px 0 2px 8px;border-left:2px solid var(--line,#ccc)}.srow.open .sdet{display:block}.srow.open .smore{display:inline-block;transform:rotate(180deg)}
 .sbar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
 .sbar i{display:block;height:100%}
 .wphoto{margin:0 0 4px;border-radius:12px;overflow:hidden;background:var(--surface-2)}
@@ -285,6 +285,7 @@ form.log .full{grid-column:1/-1}
     </div>
     <div class="row-scroll" id="regChips" aria-label="Regija"></div>
     <div class="chips" id="stChips" aria-label="Jestivost"></div>
+    <div class="row-scroll" id="treeChips" aria-label="Ispod stabla"></div>
     <div class="count" id="count"></div>
     <div class="list" id="list"></div>
     <p class="small">Hrvatski nazivi usklađeni su s bazom Gljivarskog društva Kamilo Blagaić gdje vrsta tamo postoji. Crteži su shematski.</p>
@@ -345,6 +346,7 @@ form.log .full{grid-column:1/-1}
       <div class="note"><strong>Ova pravila vrijede za Hrvatsku.</strong> U Bosni i Hercegovini, Sloveniji, Srbiji, Crnoj Gori i drugim državama vrijede drukčiji propisi o dozvolama, količinama i zaštićenim vrstama; provjeri ih kod lokalnih šumarija ili nadležnog ministarstva.</div>
       <p><strong>Dozvola je obavezna i besplatna.</strong> Za branje u šumama Hrvatskih šuma izdaje se online, vrijedi do 31. prosinca i nosiš je sa sobom (ispis ili na mobitelu).</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="https://nsp-dozvola.hrsume.hr/" target="_blank" rel="noopener">Izvadi dozvolu (Hrvatske šume)</a></div>
+      <div class="note" id="permitBox"><strong>Moja dozvola</strong><p class="small" style="margin:.2em 0 .5em">Spremi PDF ili fotografiju dozvole u aplikaciju. Ostaje samo na ovom mobitelu i otvara se i bez signala, kad je čuvar zatraži.</p><div id="permitState"></div></div>
       <ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
         <li><strong>Količina za osobne potrebe:</strong> do 3 kg gljiva dnevno; tartufa do 0,1 kg dnevno.</li>
         <li><strong>Kako brati:</strong> rukom ili nožem, bez grablji i motike; ne oštećuj podlogu i micelij; od svake vrste ostavi trećinu plodišta; ne beri prestare ni premlade gljive i ne bacaj ubrane da bi brao druge.</li>
@@ -1297,34 +1299,40 @@ const pill=st=>'<span class="st st-'+st+'">'+ST[st]+'</span>';
 const monthsTxt=m=>m.length===12?"cijele godine":MONTHS[m[0]-1]+"–"+MONTHS[m[m.length-1]-1];
 
 /* ---------- atlas ---------- */
-const state={q:"",month:NOW,reg:null,st:new Set()};
+const state={q:"",month:NOW,reg:null,st:new Set(),tree:null};
 function renderMonths(){
   const counts=MONTHS.map((_,i)=>S.filter(s=>s.m.includes(i+1)&&(!state.reg||s.reg.includes(state.reg))).length);
   const max=Math.max(...counts,1);
   $("#months").innerHTML=counts.map((n,i)=>'<button class="mo'+(i+1===NOW?' now':'')+'" aria-pressed="'+(state.month===i+1)+'" data-m="'+(i+1)+'" aria-label="'+MONTHS_FULL[i]+': '+n+' vrsta"><span class="bar" style="height:'+Math.round(n/max*56+3)+'px"></span><span class="lbl">'+MONTHS[i]+'</span></button>').join("");
   $("#seasonLbl").textContent=state.month?MONTHS_FULL[state.month-1]+(state.month===NOW?" (sada)":"")+" · dodirni ponovno za sve":"svi mjeseci";
 }
-function renderChips(){
+const TREE_F={bukva:["Bukva",/bukv/i],hrast:["Hrast",/hrast/i],smreka:["Smreka",/smrek/i],jela:["Jela",/\bjel[aeiou]|jelov/i],bor:["Bor",/\bbor|borov/i],breza:["Breza",/brez/i],kesten:["Kesten",/kesten/i],grab:["Grab",/\bgrab/i],topola:["Topola i vrba",/topol|vrb/i],crnogorica:["Crnogorica općenito",/crnogori|četinja|smrek|\bjel[aeiou]|jelov|\bbor|borov|ariš/i]};
+function renderTreeChips(){const b=$("#treeChips");if(!b)return;
+  b.innerHTML='<span class="small" style="align-self:center;white-space:nowrap">🌳 Ispod stabla:</span>'+Object.entries(TREE_F).map(([k,v])=>'<button class="chip" data-t="'+k+'" aria-pressed="'+(state.tree===k)+'">'+v[0]+'</button>').join("");}
+function renderChips(){renderTreeChips();
   $("#regChips").innerHTML='<button class="chip" data-r="" aria-pressed="'+(!state.reg)+'">Cijela Hrvatska</button>'+Object.entries(REG).map(([k,v])=>'<button class="chip" data-r="'+k+'" aria-pressed="'+(state.reg===k)+'">'+v+'</button>').join("");
   $("#stChips").innerHTML=Object.entries(ST).map(([k,v])=>'<button class="chip" data-s="'+k+'" aria-pressed="'+state.st.has(k)+'">'+v+'</button>').join("")+'<button class="chip" data-s="rl" aria-pressed="'+!!state.rl+'">Crveni popis</button>';
 }
 function norm(x){return x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d")}
 function filtered(){
   const q=norm(state.q.trim());
-  return S.filter(s=>(!state.rl||s.rl)&&(state.rl||!state.month||s.m.includes(state.month))&&(!state.reg||s.reg.includes(state.reg))&&(!state.st.size||state.st.has(s.st))&&(!q||norm(s.hr+" "+s.lat+" "+(s.alt||"")).includes(q)));
+  const tr=state.tree?TREE_F[state.tree]:null;
+  const tk=state.tree,tm=(typeof TREES!=="undefined")?TREES:{};
+  return S.filter(s=>(!tr||tr[1].test(s.stan||"")||(tm[s.id]&&(tm[s.id].includes(tk)||(tk==="crnogorica"&&tm[s.id].some(x=>["smreka","jela","bor","ariš"].includes(x))))))&&(!state.rl||s.rl)&&(state.rl||!state.month||s.m.includes(state.month))&&(!state.reg||s.reg.includes(state.reg))&&(!state.st.size||state.st.has(s.st))&&(!q||norm(s.hr+" "+s.lat+" "+(s.alt||"")).includes(q)));
 }
 function cardHTML(s){
   return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
 }
 function renderList(){
   const r=filtered();
-  $("#count").textContent=r.length+(r.length===1?" vrsta":" vrsta");
+  $("#count").textContent=r.length+" vrsta"+(state.tree?" ispod stabla: "+TREE_F[state.tree][0].toLowerCase()+" (prema opisu staništa)":"");
   $("#list").innerHTML=r.length?r.map(cardHTML).join(""):'<div class="empty">Nema vrsta za odabrane filtre.</div>';
 }
 function renderAtlas(){renderMonths();renderChips();renderList()}
 $("#q").addEventListener("input",e=>{state.q=e.target.value;renderList()});
 $("#months").addEventListener("click",e=>{const b=e.target.closest(".mo");if(!b)return;const m=+b.dataset.m;state.month=state.month===m?null:m;renderMonths();renderList()});
 $("#regChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;state.reg=b.dataset.r||null;store.set("gh-reg",state.reg);renderAtlas()});
+$("#treeChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;state.tree=state.tree===b.dataset.t?null:b.dataset.t;renderTreeChips();renderList();if(state.tree&&window.gcEv)window.gcEv("stablo-"+state.tree)});
 $("#stChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const k=b.dataset.s;if(k==="rl"){state.rl=!state.rl;renderChips();renderList();return}state.st.has(k)?state.st.delete(k):state.st.add(k);renderChips();renderList()});
 document.addEventListener("click",e=>{const c=e.target.closest("[data-id]");if(c&&!c.closest(".thumb"))openSheet(c.dataset.id)});
 
@@ -1769,7 +1777,8 @@ function renderFieldBar(){
   const t=sunset(ll[0],ll[1],new Date());
   const txt='🌅 Zalazak sunca danas oko <strong>'+t.toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit"})+'</strong> ('+esc(nm)+'); u šumi se smrači i ranije.';
   const hunt=[9,10,11,12,1,2].includes(NOW)?'<span>🦺 Lovna sezona: nosi nešto jarke boje i ne zalazi u šumu u sumrak.</span>':'';
-  box.innerHTML='<span>'+txt+'</span>'+hunt;
+  box.innerHTML='<span>'+txt+'</span>'+hunt+'<span id="fbPermit"></span>';
+  setTimeout(()=>{try{PDB.get("permit").then(p=>{const e=$("#fbPermit");if(p&&e){e.innerHTML='<button type="button" class="chip" style="padding:2px 10px">📄 Moja dozvola</button>';e.firstChild.onclick=showPermit}}).catch(()=>{})}catch(e){}},0);
 }
 renderFieldBar();
 $("#regChips").addEventListener("click",()=>setTimeout(renderFieldBar,0));
@@ -1806,8 +1815,39 @@ async function shareCard(e){
   alert("Slika je spremljena. Objavi je u grupi i dodaj link: "+APP_URL);
 }
 $("#logList").addEventListener("click",e=>{const b=e.target.closest("[data-share]");if(!b)return;const en=log.find(x=>x.id===b.dataset.share);if(!en)return;b.disabled=true;b.textContent="Pripremam…";shareCard(en).finally(()=>{b.disabled=false;b.textContent="Podijeli"})});
+
+/* ---------- moja dozvola (IndexedDB, radi bez interneta) ---------- */
+const PDB={db:null,open(){return this.db?Promise.resolve(this.db):new Promise((res,rej)=>{const r=indexedDB.open("gljive-hr",1);r.onupgradeneeded=()=>r.result.createObjectStore("files");r.onsuccess=()=>{this.db=r.result;res(r.result)};r.onerror=()=>rej(r.error)})},
+  async get(k){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction("files").objectStore("files").get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})},
+  async set(k,v){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction("files","readwrite");t.objectStore("files").put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})},
+  async del(k){const d=await this.open();return new Promise(res=>{const t=d.transaction("files","readwrite");t.objectStore("files").delete(k);t.oncomplete=()=>res()})}};
+async function renderPermit(){
+  const box=$("#permitState");if(!box)return;let p=null;try{p=await PDB.get("permit")}catch(e){}
+  const yr=new Date().getFullYear();
+  if(!p){box.innerHTML='<label class="btn ghost small filebtn">📄 Spremi dozvolu (PDF ili fotografija)<input type="file" id="permitFile" accept="application/pdf,image/*"></label>';}
+  else{const old=p.year<yr;
+    box.innerHTML=(old?'<p class="small" style="color:var(--bad)"><strong>Dozvola je iz '+p.year+'. i više ne vrijedi.</strong> Izvadi novu za '+yr+'.</p>':'<p class="small">Spremljeno '+new Date(p.t).toLocaleDateString("hr-HR")+' · vrijedi do 31. 12. '+p.year+'.</p>')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn small" id="permitShow">Prikaži dozvolu</button><label class="btn ghost small filebtn">Zamijeni<input type="file" id="permitFile" accept="application/pdf,image/*"></label><button type="button" class="btn ghost small" id="permitDel">Obriši</button></div>';}
+  const f=$("#permitFile");if(f)f.onchange=async()=>{const file=f.files[0];if(!file)return;
+    try{await PDB.set("permit",{blob:file,type:file.type||"application/octet-stream",name:file.name,t:Date.now(),year:yr});if(window.gcEv)window.gcEv("dozvola-spremljena")}catch(e){box.insertAdjacentHTML("beforeend",'<p class="small" style="color:var(--bad)">Spremanje nije uspjelo na ovom pregledniku.</p>')}
+    renderPermit();renderFieldBar&&renderFieldBar()};
+  const sh=$("#permitShow");if(sh)sh.onclick=showPermit;
+  const dl=$("#permitDel");if(dl)dl.onclick=async()=>{if(dl.dataset.c){await PDB.del("permit");renderPermit();renderFieldBar&&renderFieldBar()}else{dl.dataset.c=1;dl.textContent="Potvrdi brisanje"}};
+}
+let permitURL=null;
+async function showPermit(){
+  let p=null;try{p=await PDB.get("permit")}catch(e){}if(!p)return;
+  if(permitURL)URL.revokeObjectURL(permitURL);permitURL=URL.createObjectURL(p.blob);
+  lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
+  const isImg=/^image\//.test(p.type);
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Dozvola za branje</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
+   '<div class="d-sec" style="border-top:0">'+(isImg?'<img src="'+permitURL+'" alt="Dozvola" style="width:100%;border-radius:8px;background:#fff">':
+   '<iframe src="'+permitURL+'" title="Dozvola" style="width:100%;height:65vh;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe><a class="btn" href="'+permitURL+'" target="_blank" rel="noopener">Otvori PDF preko cijelog ekrana</a>')+
+   '<p class="small">'+esc(p.name||"")+' · vrijedi do 31. 12. '+p.year+'.</p></div>';
+}
+renderPermit();
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.21";
+const APP_VERSION="v1.22";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -1831,7 +1871,7 @@ const r1=x=>x==null?null:Math.round(x*10)/10;
 function wUrl(pts,full){
   return "https://api.open-meteo.com/v1/forecast?latitude="+pts.map(p=>p[0]).join(",")+"&longitude="+pts.map(p=>p[1]).join(",")+
    "&daily=precipitation_sum,temperature_2m_mean"+(full?",temperature_2m_min,temperature_2m_max&hourly=relative_humidity_2m,soil_moisture_3_to_9cm":"")+
-   "&past_days=14&forecast_days="+(full?4:1)+"&timezone=Europe%2FZagreb";
+   "&past_days=14&forecast_days="+(full?8:1)+"&timezone=Europe%2FZagreb";
 }
 function wParse(o){
   const D=o.daily,p=D.precipitation_sum.map(x=>x||0),past=p.slice(0,14),t=D.temperature_2m_mean.slice(0,14);
@@ -1842,7 +1882,18 @@ function wParse(o){
   if(H){const now=Date.now(),idx=H.time.map(x=>new Date(x).getTime()).filter(x=>x<=now).length;
     if(H.relative_humidity_2m){const rh=avg(H.relative_humidity_2m.slice(Math.max(0,idx-72),idx));v.rh=rh==null?null:Math.round(rh)}
     if(H.soil_moisture_3_to_9cm){const sm=H.soil_moisture_3_to_9cm.slice(0,idx).filter(x=>x!=null);v.sm=sm.length?Math.round(sm[sm.length-1]*100)/100:null}}
-  v.sc=seasonScore(v);return v;
+  v.sc=seasonScore(v);
+  /* prognoza za danas + 7 dana: gljive krenu ~4–10 dana nakon kiše */
+  const T=D.temperature_2m_mean,TM=D.temperature_2m_min;
+  if(p.length>=21&&T){v.fc=[];
+    for(let k=0;k<8;k++){const i=14+k;if(i>=p.length)break;
+      const rw=p.slice(Math.max(0,i-10),i-3).reduce((a,b)=>a+b,0);
+      const tm=avg(T.slice(Math.max(0,i-3),i+1));const mn=TM?Math.min(...TM.slice(Math.max(0,i-2),i+1).filter(x=>x!=null)):null;
+      let sc=(rw>=15)+(rw>=35)+(rw>=60);
+      if(tm!=null){if(tm<5||tm>24)sc=Math.max(0,sc-2);else if(tm<8||tm>21)sc=Math.max(0,sc-1)}
+      if(mn!=null&&mn<=-2)sc=Math.max(0,sc-1);
+      v.fc.push(Math.min(3,sc))}}
+  return v;
 }
 async function wFetch(pts){
   for(const full of [true,false]){
@@ -1861,15 +1912,25 @@ async function loadSeason(){
     store.set("gh-season2",{t:Date.now(),d});renderSeason(d,Date.now());
   }catch(e){if(cached)renderSeason(cached.d,cached.t);else box.innerHTML='<p class="small">Podaci o vremenu trenutno nisu dostupni.</p>'}
 }
+const DAYS=["ned","pon","uto","sri","čet","pet","sub"];
+function fcBest(fc){if(!fc||!fc.length)return"";const mx=Math.max(...fc);if(mx<2)return"idući tjedan slabo";
+  const d=new Date(),idx=fc.map((x,i)=>x===mx?i:-1).filter(i=>i>=0);
+  const nm=i=>i===0?"danas":i===1?"sutra":DAYS[(d.getDay()+i)%7];
+  /* spoji uzastopne dane u raspon */
+  const parts=[];let a=idx[0],b=idx[0];for(let j=1;j<=idx.length;j++){if(idx[j]===b+1){b=idx[j];continue}parts.push(a===b?nm(a):nm(a)+"–"+nm(b));a=b=idx[j]}
+  return"najbolje: "+parts.slice(0,2).join(", ")}
+function fcStrip(fc){if(!fc)return"";const d=new Date();
+  return '<span class="fcstrip">'+fc.map((x,i)=>'<span title="'+LEVELS[x][0]+'"><i style="background:'+LEVELS[x][1]+';opacity:'+(.35+x*.22)+'"></i>'+(i===0?"danas":DAYS[(d.getDay()+i)%7])+'</span>').join("")+'</span>'}
 function smTxt(sm){return sm==null?"":sm<0.15?"suho tlo":sm<0.25?"umjereno vlažno tlo":sm<0.35?"vlažno tlo":"mokro tlo"}
 function sRow(v,name){
   const L=LEVELS[v.sc];
-  const short=[v.r14+" mm",v.tm+" °C"];if(v.rh!=null)short.push(v.rh+" % vlage");
+  const short=[v.r14+" mm",v.tm+" °C"];if(v.rh!=null)short.push(v.rh+" % vlage");const fb=fcBest(v.fc);if(fb)short.push("📅 "+fb);
   const det=["Kiša: "+v.r14+" mm u 14 dana, "+v.r5+" mm u zadnjih 5 dana"];
   if(v.tmin!=null)det.push("Temperatura: prosjek tjedna "+v.tm+" °C, zadnja 3 dana min "+v.tmin+" / max "+v.tmax+" °C");
   if(v.rh!=null)det.push("Vlaga zraka (3 dana): "+v.rh+" %");
   if(v.sm!=null)det.push("Tlo: "+smTxt(v.sm)+" ("+Math.round(v.sm*100)+" % vode)");
   if(v.fr!=null)det.push("Prognoza kiše za 3 dana: "+v.fr+" mm");
+  if(v.fc)det.push("Izgledi za branje idućih dana (procjena iz kiše i temperature):<br>"+fcStrip(v.fc));
   return '<div class="srow" role="button" tabindex="0" onclick="this.classList.toggle(\'open\')"><span>'+esc(name)+'</span><span class="sbar"><i style="width:'+((v.sc+1)*25)+'%;background:'+L[1]+'"></i></span><strong style="color:'+L[1]+'">'+L[0]+'</strong><span class="small num">'+short.join(" · ")+' <span class="smore">▾</span></span><span class="small sdet">'+det.join("<br>")+'</span></div>';
 }
 function renderSeason(d,t){
