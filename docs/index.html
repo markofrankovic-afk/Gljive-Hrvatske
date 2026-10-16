@@ -124,6 +124,19 @@ a.btn{display:inline-block;text-decoration:none}
 .mo[aria-pressed="true"] .lbl{color:var(--accent);font-weight:700}
 .mo.now .lbl{text-decoration:underline}
 
+.hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hdr-tools{display:flex;gap:6px}
+.tool-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-width:44px;height:36px;padding:0 10px;font-weight:800}
+.tool-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.tool-btn.sos{background:var(--dead-bg);color:var(--dead);border-color:var(--dead-bg)}
+html.big body{font-size:19px}html.big{font-size:118%}
+.weekwarn{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r);padding:10px 12px;background:var(--bad-bg);border-left:4px solid var(--bad)}
+.weekwarn .ww-x{margin-left:auto;border:0;background:none;font-size:1.1rem;line-height:1;color:var(--muted)}
+.fieldbar{display:flex;gap:6px 14px;flex-wrap:wrap}
+.sos-call{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sos-call a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;border-radius:var(--r);padding:14px 8px;font-weight:800;font-size:1.1rem;background:var(--dead-bg);color:var(--dead);text-align:center}
+.sos-call a span{font-size:.8rem;font-weight:500}
+.sos-timer{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;font-family:var(--display)}
 /* species list */
 .list{display:grid;grid-template-columns:1fr;gap:10px}
 @media (min-width:620px){.list{grid-template-columns:1fr 1fr}}
@@ -256,12 +269,14 @@ form.log .full{grid-column:1/-1}
       <div class="eyebrow">Terenski vodič</div>
       <h1>Gljive Hrvatske</h1>
     </div>
-    <div class="sub" id="todayLbl"></div>
+    <div class="hdr-r"><div class="hdr-tools"><button type="button" class="tool-btn" id="bigTxt" aria-pressed="false" title="Veća slova">Aa</button><button type="button" class="tool-btn sos" id="sosBtn" title="Pojeo sam nepoznatu gljivu">SOS</button></div><div class="sub" id="todayLbl"></div></div>
   </header>
 
   <!-- ATLAS -->
   <section class="view" id="v-atlas">
     <div class="search"><input id="q" type="search" placeholder="Traži: vrganj, Amanita, lisičarka…" aria-label="Traži vrstu"></div>
+    <div id="weekWarn"></div>
+    <div class="fieldbar small" id="fieldBar"></div>
     <div id="offlineBar" class="note" hidden>Bez interneta: atlas, ključ, vodič, recepti i dnevnik rade normalno. Fotografije i analiza slike čekaju vezu.</div>
     <div class="season" id="seasonIdx"><p class="small">Učitavam indeks sezone…</p></div>
     <div class="season">
@@ -383,6 +398,7 @@ form.log .full{grid-column:1/-1}
     </div>
 
     <h2>Trovanje gljivama</h2>
+    <button type="button" class="btn" style="background:var(--dead-bg);color:var(--dead)" onclick="sosOpen()">🆘 Pojeo sam nepoznatu gljivu: što sad?</button>
     <p>Vrijeme od obroka do prvih simptoma najvažniji je podatak.</p>
     <div class="latency">
       <div class="lat-short"><span class="eyebrow">Unutar 6 sati</span><strong>Uglavnom probavne smetnje</strong><span class="small" style="color:inherit">Mučnina, povraćanje, proljev. Ipak se javi liječniku.</span></div>
@@ -1674,8 +1690,91 @@ $("#sheet").addEventListener("click",e=>{
   const lv=e.target.closest("[data-qlev]");if(lv){quizStart(lv.dataset.qlev);return}
 });
 (()=>{const t=quizBestTxt();if(t)$("#quizBest").textContent="Najbolje: "+t})();
+
+/* ---------- SOS: pojeo sam nepoznatu gljivu ---------- */
+let sosTick=null;
+function sosRender(){
+  const t=store.get("gh-sos-meal",null);
+  let tim='';
+  if(t){const ms=Date.now()-t,h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);
+    tim='<div class="d-sec" style="text-align:center"><span class="eyebrow">Od obroka je prošlo</span><div class="sos-timer">'+h+' h '+String(m).padStart(2,"0")+' min</div>'+
+    (h>=6?'<div class="note dead"><strong>Ako su simptomi krenuli tek 6 ili više sati nakon obroka, trovanje može biti smrtno opasno</strong> (pupavke, patuljice, male sunčanice, koprenke). Hitno u bolnicu, čak i ako se osoba osjeća bolje. Bez simptoma? Svejedno nazovi Centar za kontrolu otrovanja.</div>':
+     '<div class="note danger"><strong>Simptomi unutar 6 sati od obroka najčešće su probavne smetnje</strong>, ali u jelu je mogla biti i opasnija vrsta. Svejedno nazovi i javi se liječniku, a zapiši kada su simptomi krenuli.</div>')+
+    '<p class="small">Obrok zabilježen: '+new Date(t).toLocaleString("hr-HR",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})+'</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="btn ghost small" id="sosReset">Obriši vrijeme</button></div></div>';}
+  else tim='<div class="d-sec"><span class="eyebrow">Kada je gljiva pojedena?</span><p class="small">Vrijeme od obroka do prvih simptoma liječnicima je najvažniji podatak.</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="datetime-local" id="sosWhen" style="padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"><button type="button" class="btn" id="sosStart">Pokreni štopericu</button></div></div>';
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Hitno: trovanje gljivama</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
+   '<div class="d-sec" style="border-top:0"><h2 id="dName">Pojeo sam nepoznatu gljivu</h2><p>Ne čekaj simptome. Odmah nazovi:</p>'+
+   '<div class="sos-call"><a href="tel:112">112<span>Hitna pomoć</span></a><a href="tel:+38512348342">01 2348 342<span>Centar za kontrolu otrovanja, 0–24</span></a></div></div>'+tim+
+   '<div class="d-sec"><span class="eyebrow">Što ponijeti u bolnicu</span><ul class="keyf"><li>Ostatke gljiva, sirove ili kuhane, i otpatke od čišćenja</li><li>Povraćeni sadržaj, ako ga ima (u vrećici ili posudi)</li><li>Podatak kada je pojedeno i kada su krenuli simptomi</li><li>Popis svih koji su jeli isto jelo; i oni moraju liječniku</li><li>Fotografije gljiva s terena, ako ih imaš</li></ul></div>'+
+   '<div class="d-sec"><span class="eyebrow">Ne radi ovo</span><ul class="keyf"><li>Ne izazivaj povraćanje i ne daj mlijeko ili „domaće lijekove” bez savjeta liječnika</li><li>Ne čekaj da „prođe”: kod najopasnijih trovanja nakon prvih simptoma slijedi lažno poboljšanje</li></ul></div>';
+  $("#sheet").scrollTop=0;
+  clearInterval(sosTick);if(t)sosTick=setInterval(()=>{if($("#sheet").hidden||!$(".sos-timer")){clearInterval(sosTick);return}sosRender()},30000);
+}
+function sosOpen(){lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;sosRender();if(window.gcEv)window.gcEv("sos")}
+$("#sosBtn").addEventListener("click",sosOpen);
+$("#sheet").addEventListener("click",e=>{
+  if(e.target.id==="sosStart"){const v=$("#sosWhen").value;const t=v?new Date(v).getTime():Date.now();store.set("gh-sos-meal",isNaN(t)?Date.now():Math.min(t,Date.now()));sosRender()}
+  if(e.target.id==="sosReset"){store.set("gh-sos-meal",null);sosRender()}
+});
+
+/* ---------- veća slova ---------- */
+function applyBig(on){document.documentElement.classList.toggle("big",on);$("#bigTxt").setAttribute("aria-pressed",String(on))}
+applyBig(!!store.get("gh-big",false));
+$("#bigTxt").addEventListener("click",()=>{const on=!document.documentElement.classList.contains("big");store.set("gh-big",on);applyBig(on);if(window.gcEv)window.gcEv("velika-slova")});
+
+/* ---------- upozorenje tjedna ---------- */
+const WARN=[
+ ["pupavka","Zelena pupavka je u sezoni. Ne zamijeni je sa zelenim krasnicama i golubačama: gljivu uvijek izvadi cijelu i pogledaj ima li vulvu u tlu."],
+ ["bijela-pupavka","Bijela pupavka je u sezoni. Bijele gljive s bijelim listićima, prstenom i vulvom ne beri, pa ni kad sliče pečurkama."],
+ ["lepiota","Male sunčanice su u sezoni. Beri samo sunčanice s klobukom većim od 10 cm i pomičnim dvostrukim prstenom."],
+ ["galerina","Rebrasta patuljica raste u busenima na drvu kao i medena puza. Smrtno je otrovna: pogledaj otisak spora i ne beri male smeđe gljive."],
+ ["koprenka","Opasne koprenke su u sezoni. Narančastosmeđe gljive s hrđastim listićima ne beri: trovanje se javlja i nakon 2–3 tjedna."],
+ ["omphalotus","Lažna lisičarka s maslina je u sezoni na primorju. Raste u busenima na drvu i ima prave listiće; lisičarka nikad ne raste na drvu."],
+ ["tigrasta-vitezovka","Tigrasta vitezovka je u sezoni. Sive vitezovke s krupnim tamnim ljuskama ne beri; zamjenjuje se sa sivkama."],
+ ["b-tricholoma-flavovirens","Zelenkasta vitezovka (žutača) je u sezoni. Nekad smatrana jestivom, uzrokovala je smrtna trovanja: ne beri je."],
+ ["proljetna-pupavka","Proljetna pupavka raste u isto vrijeme kad i đurđevača. Bijele gljive s prstenom i vulvom ne beri."],
+ ["hrcak","Hrčak je u sezoni kad i smrčci. Prerezan smrčak ima jednu šupljinu, hrčak mozgoliki klobuk i komorice."],
+ ["rudoliska","Rudoliska je u sezoni s đurđevačom. Đurđevača ima bijel otisak spora i miriše na brašno, rudoliska ružičast."],
+ ["panterovka","Panterovka je u sezoni. Smeđi klobuk s čisto bijelim krpicama i meso koje ne crveni znače: ne diraj."]
+];
+function weekNo(){const d=new Date(),j=new Date(d.getFullYear(),0,1);return Math.floor(((d-j)/864e5+j.getDay())/7)}
+function renderWeekWarn(){
+  const box=$("#weekWarn");if(!box)return;
+  const c=WARN.filter(w=>byId[w[0]]&&byId[w[0]].m.includes(NOW));
+  const key=new Date().getFullYear()+"-"+weekNo();
+  if(!c.length||store.get("gh-ww-hide",null)===key){box.innerHTML="";return}
+  const w=c[weekNo()%c.length],sp=byId[w[0]];
+  box.innerHTML='<div class="weekwarn"><div><span class="eyebrow" style="color:var(--bad)">⚠ Upozorenje tjedna</span><p style="margin:.2em 0 .4em">'+esc(w[1])+'</p><button type="button" class="btn ghost small" data-id="'+sp.id+'">Pogledaj: '+esc(sp.hr)+'</button></div><button type="button" class="ww-x" id="wwHide" aria-label="Sakrij do sljedećeg tjedna">×</button></div>';
+  $("#wwHide").onclick=()=>{store.set("gh-ww-hide",key);box.innerHTML=""};
+  box.querySelector("[data-id]").onclick=e=>openSheet(e.currentTarget.dataset.id);
+}
+renderWeekWarn();
+
+/* ---------- zalazak sunca i lovna sezona ---------- */
+const REG_LL={gk:[45.40,14.80],li:[44.55,15.37],sh:[45.49,15.55],za:[46.16,15.88],me:[46.30,16.60],sl:[45.55,18.69],is:[45.24,13.94],kv:[45.33,14.44],da:[43.51,16.44]};
+function sunset(lat,lon,d){
+  const rad=Math.PI/180,day=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+  const g=2*Math.PI/365*(day-1+0.5);
+  const eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+  const dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+  const ha=Math.acos(Math.cos(90.833*rad)/(Math.cos(lat*rad)*Math.cos(dec))-Math.tan(lat*rad)*Math.tan(dec))/rad;
+  const utcMin=720-4*(lon-ha)-eq;
+  const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),0,0,0)+utcMin*6e4);
+  return t;
+}
+function renderFieldBar(){
+  const box=$("#fieldBar");if(!box)return;
+  const me=store.get("gh-season-me",null);
+  let ll=state.reg?REG_LL[state.reg]:[45.3,15.2],nm=state.reg?REG[state.reg]:"središnji dio Hrvatske";
+  const t=sunset(ll[0],ll[1],new Date());
+  const txt='🌅 Zalazak sunca danas oko <strong>'+t.toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit"})+'</strong> ('+esc(nm)+'); u šumi se smrači i ranije.';
+  const hunt=[9,10,11,12,1,2].includes(NOW)?'<span>🦺 Lovna sezona: nosi nešto jarke boje i ne zalazi u šumu u sumrak.</span>':'';
+  box.innerHTML='<span>'+txt+'</span>'+hunt;
+}
+renderFieldBar();
+$("#regChips").addEventListener("click",()=>setTimeout(renderFieldBar,0));
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.19";
+const APP_VERSION="v1.20";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
