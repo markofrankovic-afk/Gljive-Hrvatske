@@ -461,7 +461,7 @@ form.log .full{grid-column:1/-1}
   <!-- JOURNAL -->
   <section class="view" id="v-log" hidden>
     <h2>Moj dnevnik nalaza</h2>
-    <p class="small">Zapisi se čuvaju samo na ovom uređaju, u ovom pregledniku.</p>
+    <p class="small">Zapisi se čuvaju samo na ovom uređaju, u ovom pregledniku. Gumbom „Podijeli” napraviš sliku nalaza za Facebook ili WhatsApp; točno mjesto se nikad ne prikazuje, samo regija.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn ghost small" id="bkExport">Izvezi sigurnosnu kopiju</button><label class="btn ghost small" style="cursor:pointer">Uvezi kopiju<input id="bkImport" type="file" accept="application/json,.json" hidden></label><button type="button" class="btn small" id="installBtn" hidden>Instaliraj aplikaciju</button><span class="small" id="bkMsg"></span></div>
     <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:280px"></div><p class="small" id="mapCount" style="padding:8px 12px"></p></div>
     <form class="log panel" id="logForm">
@@ -1534,7 +1534,7 @@ function shrink(file){return new Promise(res=>{const img=new Image();const u=URL
 function renderLog(){
   if(window.onLogChange)window.onLogChange(log);
   if(!log.length){$("#logList").innerHTML='<div class="empty">Još nema zapisa. Spremi prvi nalaz obrascem iznad.</div>';return}
-  $("#logList").innerHTML=log.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{const s=byId[e.sp];return '<div class="entry">'+(e.img?'<img src="'+e.img+'" alt="">':(s?art(s).replace('class="art"','class="ph"'):'<div class="ph"></div>'))+'<div style="min-width:0;display:flex;flex-direction:column;gap:2px"><strong>'+esc(s?s.hr:"Neodređena gljiva")+'</strong><span class="small">'+esc(e.date.split("-").reverse().join("."))+(e.reg?' · '+esc(REG[e.reg]):'')+(e.qty?' · '+esc(e.qty):'')+'</span>'+(e.place?'<span>'+esc(e.place)+'</span>':'')+(e.note?'<span class="small">'+esc(e.note)+'</span>':'')+'</div><button class="del" data-del="'+e.id+'">Obriši</button></div>'}).join("");
+  $("#logList").innerHTML=log.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{const s=byId[e.sp];return '<div class="entry">'+(e.img?'<img src="'+e.img+'" alt="">':(s?art(s).replace('class="art"','class="ph"'):'<div class="ph"></div>'))+'<div style="min-width:0;display:flex;flex-direction:column;gap:2px"><strong>'+esc(s?s.hr:"Neodređena gljiva")+'</strong><span class="small">'+esc(e.date.split("-").reverse().join("."))+(e.reg?' · '+esc(REG[e.reg]):'')+(e.qty?' · '+esc(e.qty):'')+'</span>'+(e.place?'<span>'+esc(e.place)+'</span>':'')+(e.note?'<span class="small">'+esc(e.note)+'</span>':'')+'</div><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button class="btn small" type="button" data-share="'+e.id+'">Podijeli</button><button class="del" data-del="'+e.id+'">Obriši</button></div></div>'}).join("");
 }
 $("#logForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -1773,8 +1773,41 @@ function renderFieldBar(){
 }
 renderFieldBar();
 $("#regChips").addEventListener("click",()=>setTimeout(renderFieldBar,0));
+
+/* ---------- kartica za dijeljenje nalaza ---------- */
+const APP_URL="https://markofrankovic-afk.github.io/Gljive-Hrvatske/";
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+function wrapText(ctx,txt,x,y,maxW,lh,maxLines){const w=txt.split(" ");let line="",n=0;for(let i=0;i<w.length;i++){const t=line?line+" "+w[i]:w[i];if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);y+=lh;n++;line=w[i];if(n>=maxLines-1){ctx.fillText(line+(i<w.length-1?"…":""),x,y);return y+lh}}else line=t}if(line)ctx.fillText(line,x,y);return y+lh}
+async function shareCard(e){
+  const s=byId[e.sp],W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  try{await document.fonts.ready}catch(_){}
+  x.fillStyle="#1f2a1c";x.fillRect(0,0,W,H);
+  const PH=840;let img=null;
+  try{if(e.img)img=await loadImg(e.img);else if(s&&PHOTOS[s.id])img=await loadImg("foto/"+encodeURIComponent(s.id)+".jpg");else if(s){const svg=art(s).replace('<svg','<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"');img=await loadImg("data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg))}}catch(_){img=null}
+  if(img){const r=Math.max(W/img.width,PH/img.height),w=img.width*r,h=img.height*r;x.save();x.beginPath();x.rect(0,0,W,PH);x.clip();x.drawImage(img,(W-w)/2,(PH-h)/2,w,h);x.restore()}
+  else{x.fillStyle="#2c3a28";x.fillRect(0,0,W,PH);x.font="220px serif";x.textAlign="center";x.fillText("🍄",W/2,PH/2+80);x.textAlign="left"}
+  const g=x.createLinearGradient(0,PH-220,0,PH);g.addColorStop(0,"rgba(31,42,28,0)");g.addColorStop(1,"rgba(31,42,28,1)");x.fillStyle=g;x.fillRect(0,PH-220,W,220);
+  let y=PH+20;
+  x.fillStyle="#f2efe4";x.font="800 76px Alegreya, Georgia, serif";y=wrapText(x,s?s.hr:"Moj nalaz",64,y+60,W-128,84,2);
+  if(s&&s.hr!==s.lat){x.fillStyle="#c9c3b0";x.font="italic 500 42px Alegreya, Georgia, serif";x.fillText(s.lat,64,y-14);y+=40}
+  const meta=[e.date?e.date.split("-").reverse().join(". ")+".":"",e.reg?REG[e.reg]:"",e.qty||""].filter(Boolean).join("  ·  ");
+  x.fillStyle="#e39a3b";x.font="700 40px 'Alegreya Sans', system-ui, sans-serif";x.fillText(meta,64,y+20);y+=40;
+  if(s&&["otrovna","smrtno"].includes(s.st)){x.fillStyle="#ff9a74";x.font="700 34px 'Alegreya Sans', system-ui, sans-serif";x.fillText(s.st==="smrtno"?"⚠ Smrtno otrovna – samo za fotografiju!":"⚠ Otrovna – nije za jelo",64,y+40)}
+  x.fillStyle="#2c3a28";x.fillRect(0,H-170,W,170);
+  x.fillStyle="#f2efe4";x.font="800 46px Alegreya, Georgia, serif";x.fillText("🍄 Gljive Hrvatske",64,H-108);
+  x.fillStyle="#c9c3b0";x.font="500 30px 'Alegreya Sans', system-ui, sans-serif";x.fillText("besplatna aplikacija za gljivare",W-64-x.measureText("besplatna aplikacija za gljivare").width,H-110);
+  x.fillStyle="#e39a3b";x.font="700 32px 'Alegreya Sans', system-ui, sans-serif";x.fillText("markofrankovic-afk.github.io/Gljive-Hrvatske",64,H-50);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
+  const name="nalaz-"+(s?s.id:"gljiva")+".jpg",file=new File([blob],name,{type:"image/jpeg"});
+  const text=(s?s.hr+" 🍄 ":"Moj nalaz 🍄 ")+"Zabilježeno u aplikaciji Gljive Hrvatske: "+APP_URL;
+  if(window.gcEv)window.gcEv("nalaz-podijeli");
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});return}}catch(err){if(err&&err.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
+  alert("Slika je spremljena. Objavi je u grupi i dodaj link: "+APP_URL);
+}
+$("#logList").addEventListener("click",e=>{const b=e.target.closest("[data-share]");if(!b)return;const en=log.find(x=>x.id===b.dataset.share);if(!en)return;b.disabled=true;b.textContent="Pripremam…";shareCard(en).finally(()=>{b.disabled=false;b.textContent="Podijeli"})});
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.20";
+const APP_VERSION="v1.21";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
