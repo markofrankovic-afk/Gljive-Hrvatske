@@ -1855,9 +1855,11 @@ function navDraw(){const box=$("#navBox");if(!box)return;
   if(!NAV.pos){box.innerHTML='<p class="status">Tražim GPS signal… (na otvorenom ide brže)</p>';return}
   const d=hav(NAV.pos,NAV.target),b=brg(NAV.pos,NAV.target),rel=NAV.head!=null?(b-NAV.head+360)%360:b;
   const dist=d<1000?Math.round(d)+" m":(d/1000).toFixed(2).replace(".",",")+" km";
-  box.innerHTML='<div style="text-align:center"><svg viewBox="0 0 100 100" width="200" height="200" style="transform:rotate('+rel+'deg);transition:transform .3s"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M50 8 L66 60 L50 50 L34 60 Z" fill="var(--accent)"/>'+(NAV.head==null?'<text x="50" y="13" font-size="9" font-weight="700" text-anchor="middle" fill="var(--muted)" transform="rotate('+(-rel)+' 50 50)">S</text>':'')+'</svg>'+
-   '<div class="sos-timer">'+dist+'</div><p>'+(d<25?'<strong>Stigao si! 🎉</strong>':'Smjer: <strong>'+DIR[Math.round(b/45)%8]+'</strong> ('+Math.round(b)+'°)')+'</p>'+
-   (NAV.head==null?'<p class="small">Kompas nije dostupan: strelica pokazuje smjer u odnosu na sjever. Okreni mobitel tako da je vrh prema sjeveru.</p>':'<p class="small">Drži mobitel vodoravno. Strelica pokazuje kamo ići.</p>')+
+  const here=d<25;
+  const carSvg='<svg viewBox="0 0 100 100" width="200" height="200" role="img" aria-label="Stigao si do cilja"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--ok)" stroke-width="3"/><path d="M24 58 L29 44 Q31 39 36 39 L64 39 Q69 39 71 44 L76 58 Q80 59 80 63 L80 69 Q80 71 78 71 L22 71 Q20 71 20 69 L20 63 Q20 59 24 58 Z" fill="var(--accent)"/><path d="M32 56 L35 46 Q36 44 38 44 L62 44 Q64 44 65 46 L68 56 Z" fill="var(--surface)"/><circle cx="32" cy="71" r="6" fill="var(--ink)"/><circle cx="68" cy="71" r="6" fill="var(--ink)"/><circle cx="72" cy="28" r="12" fill="var(--ok)"/><path d="M66 28 L70.5 32.5 L78 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  box.innerHTML='<div style="text-align:center">'+(here?carSvg:'<svg viewBox="0 0 100 100" width="200" height="200" style="transform:rotate('+rel+'deg);transition:transform .3s"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M50 8 L66 60 L50 50 L34 60 Z" fill="var(--accent)"/>'+(NAV.head==null?'<text x="50" y="13" font-size="9" font-weight="700" text-anchor="middle" fill="var(--muted)" transform="rotate('+(-rel)+' 50 50)">S</text>':'')+'</svg>')+
+   '<div class="sos-timer">'+dist+'</div><p>'+(d<25?'<strong>Stigao si! 🎉</strong>':'Smjer: <strong>'+DIR[Math.round(b/45)%8]+'</strong> ('+Math.round(b)+'°)')+'</p>'+(here?'<p class="small">Ovdje si spremio lokaciju. Pogledaj oko sebe.</p>':
+   (NAV.head==null?'<p class="small">Kompas nije dostupan: strelica pokazuje smjer u odnosu na sjever. Okreni mobitel tako da je vrh prema sjeveru.</p>':'<p class="small">Drži mobitel vodoravno. Strelica pokazuje kamo ići.</p>'))+
    '<p class="small">Točnost GPS-a ±'+Math.round(NAV.pos.acc||0)+' m · zračna udaljenost, ne staza.</p></div>';}
 function navOpen(target,label){
   NAV.target=target;NAV.label=label;NAV.pos=null;lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
@@ -1911,7 +1913,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.0.2";
+const APP_VERSION="v2.0.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
