@@ -319,10 +319,10 @@ form.log .full{grid-column:1/-1}
       <div class="list" id="keyList"></div>
     </div>
 
-    <div class="panel" id="lmPanel"><h2>3. Prepoznaj bez Claudea</h2><p class="small">Besplatno i bez računa. Model se preuzme jednom (oko 35 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
-    <div class="panel" id="aiPanel">
-      <h2>4. Detaljna analiza (Claude API)</h2>
-      <div id="aiUnavailable" class="note" hidden>Analiza slike radi kad se stranica otvori u aplikaciji Claude. Ključ iznad radi uvijek.</div>
+    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model se preuzme jednom (oko 35 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="panel" id="aiPanel" hidden>
+      <h2>3. Analiza slike</h2>
+      <div id="aiUnavailable" class="note" hidden>Analiza slike trenutno nije dostupna.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="analyze" disabled>Analiziraj slike</button>
         <button class="btn ghost" id="stop" hidden>Zaustavi</button>
@@ -1407,7 +1407,7 @@ function renderThumbs(){
     el.classList.toggle("has",!!p);el.querySelector(".slot-img").style.backgroundImage=p?'url("'+p.url+'")':"";
     let rm=el.querySelector(".rm");if(p&&!rm){rm=document.createElement("button");rm.type="button";rm.className="rm";rm.dataset.rm=i;rm.setAttribute("aria-label","Ukloni fotografiju");rm.textContent="×";el.appendChild(rm)}else if(!p&&rm)rm.remove()});
   const n=slots.filter(Boolean).length;
-  $("#dropHint").textContent=n?("Dodano "+n+" od 3. "+(n<3?"Što više koraka, to točnije prepoznavanje.":"")+(maxImgs<n?" Analiza s Claudeom koristi prvih "+maxImgs+".":"")):"";
+  $("#dropHint").textContent=n?("Dodano "+n+" od 3. "+(n<3?"Što više koraka, to točnije prepoznavanje.":"")):"";
   $("#analyze").disabled=!(photos.length&&sample&&imgOK);
   if(window.onPhotosChange)window.onPhotosChange();
 }
@@ -1513,29 +1513,7 @@ function showErr(e){
 }
 $("#analyze").addEventListener("click",runStep1);
 
-/* Analiza slike preko vlastitog poslužitelja (/api/identify). Slike se prije slanja smanjuju na 1280 px. */
-function toJpegB64(file,max){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);
-  img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
-    c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.85).split(",")[1])};
-  img.onerror=()=>{URL.revokeObjectURL(u);rej({code:"image_rejected"})};img.src=u})}
-sample={
-  async json(prompt,opts){
-    if(!navigator.onLine)throw{code:"offline"};
-    const images=await Promise.all((opts.images||[]).map(f=>toJpegB64(f,1280)));
-    let r;
-    try{r=await fetch("api/identify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,images}),signal:opts.signal})}
-    catch(e){throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error"}}
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw{code:d.code||(r.status===429?"rate_limited":"upstream_error"),message:d.message};
-    return d.result;
-  }
-};
-imgOK=true;maxImgs=3;
-errCopy.offline="Nema internetske veze. Ključ po obilježjima radi i bez nje; analizu pokreni kad se vratiš u domet.";
-errCopy.not_configured="Poslužitelj nema postavljen API ključ. Vidi PROCITAJ_ME.txt.";
-errCopy.daily_limit="Dnevni broj analiza je potrošen. Pokušaj sutra.";
-renderThumbs();
-
+maxImgs=3;renderThumbs();
 
 /* ---------- recipes ---------- */
 function renderRecipes(){
@@ -1928,7 +1906,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.0";
+const APP_VERSION="v2.0.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2430,7 +2408,7 @@ async function runLocal(){
     renderLocal();
   }catch(e){
     const code=e&&e.code;
-    lmStatus(code==="no_model"?"Model još nije postavljen. Vidi alati/pripremi_model.py u uputama.":code==="engine"?"Ovaj preglednik ne dopušta pokretanje modela. Koristi analizu ispod ili mobilnu verziju.":code==="image_rejected"?"Fotografija se ne može pročitati. Pokušaj s JPEG slikom.":"Prepoznavanje nije uspjelo: "+(e&&e.message||"nepoznata greška"));
+    lmStatus(code==="no_model"?"Model još nije postavljen. Vidi alati/pripremi_model.py u uputama.":code==="engine"?"Ovaj preglednik ne dopušta pokretanje modela. Pokušaj u Chromeu ili instaliraj aplikaciju.":code==="image_rejected"?"Fotografija se ne može pročitati. Pokušaj s JPEG slikom.":"Prepoznavanje nije uspjelo: "+(e&&e.message||"nepoznata greška"));
   }finally{btn.disabled=false}
 }
 function initLocal(){
@@ -2440,8 +2418,7 @@ function initLocal(){
     if(e.target.id==="lmLog")prefillLog(e.target.dataset.sp);
   });
   if(store.get("gh-model-ok",null))lmStatus("Model je preuzet na uređaj.");
-  /* provjera radi li i poslužiteljska analiza (Claude API); ako ne radi, skrij taj dio */
-  if(LMCFG.server)fetch("api/health").then(r=>r.json()).then(j=>{if(!j.api_key){$("#aiPanel").hidden=true}}).catch(()=>{$("#aiPanel").hidden=true});
+  /* prepoznavanje radi samo lokalno, na uređaju */
 }
 initLocal();
 
