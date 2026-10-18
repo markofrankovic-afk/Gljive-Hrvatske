@@ -1913,7 +1913,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.0.4";
+const APP_VERSION="v2.0.5";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2111,7 +2111,20 @@ function initPWA(){
   $("#installBtn")&&$("#installBtn").addEventListener("click",async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$("#installBtn").hidden=true});
   $("#regChips").addEventListener("click",()=>{const c=store.get("gh-season2",null);if(c)renderSeason(c.d,c.t)});
   document.querySelector('#tabs [data-v="log"]').addEventListener("click",()=>setTimeout(()=>{initMap();map&&map.invalidateSize()},50));
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    /* nova verzija: ako je aplikacija tek otvorena, odmah se osvježi; inače ponudi gumb */
+    const t0=Date.now(),hadCtl=!!navigator.serviceWorker.controller;let done=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(!hadCtl||done)return;done=true;
+      if(Date.now()-t0<15000){location.reload();return}
+      const b=document.createElement("button");b.type="button";b.className="btn small";b.textContent="Nova verzija je spremna – osvježi";
+      b.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.35)";
+      b.addEventListener("click",()=>location.reload());document.body.appendChild(b);
+    });
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{})});
+    }).catch(()=>{});
+  }
 }
 initPWA();
 
