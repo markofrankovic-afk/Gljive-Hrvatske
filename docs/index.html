@@ -104,7 +104,7 @@ a.btn{display:inline-block;text-decoration:none}
 
 /* status pills */
 .st{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap}
-.st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st b{font-weight:900;font-size:.95em;line-height:1}
 .st-jestiva{color:var(--ok);background:var(--ok-bg)}
 .st-uvjetno{color:var(--warn);background:var(--warn-bg)}
 .st-nepoznata{color:var(--grey);background:var(--grey-bg)}
@@ -209,7 +209,7 @@ dl.morph dd{margin:0;min-width:0}
 .slot.over,.slots.over .slot{border-color:var(--accent)}
 .slot input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px;z-index:1}
 .slot-img{flex:1;min-height:84px;background:var(--surface-2) center/cover no-repeat;display:flex;align-items:center;justify-content:center}
-.slot-img::before{content:"+";font-size:2rem;color:var(--muted)}
+.slot-img::before{content:"";width:62%;height:62%;opacity:.75;background:center/contain no-repeat}.slot[data-slot="0"] .slot-img::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none' stroke='%23887a66' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M12 40 Q40 10 68 40 Z'/%3E%3Cpath d='M34 40 L33 70 M46 40 L47 70 M33 70 Q40 74 47 70'/%3E%3C/svg%3E")}.slot[data-slot="1"] .slot-img::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none' stroke='%23887a66' stroke-width='2.5' stroke-linecap='round'%3E%3Cellipse cx='40' cy='40' rx='30' ry='30'/%3E%3Ccircle cx='40' cy='40' r='7'/%3E%3Cpath d='M40 10V33M40 47V70M10 40H33M47 40H70M19 19L35 35M45 45L61 61M61 19L45 35M35 45L19 61'/%3E%3C/svg%3E")}.slot[data-slot="2"] .slot-img::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none' stroke='%23887a66' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M10 36 Q40 8 70 36 Z'/%3E%3Cpath d='M40 22 V70' stroke-dasharray='4 4'/%3E%3Cpath d='M33 36 L32 64 Q30 72 40 74 Q50 72 48 64 L47 36'/%3E%3Cpath d='M8 70 H72' stroke-width='1.5'/%3E%3C/svg%3E")}
 .slot.has .slot-img::before{content:none}
 .slot.has{border-style:solid;border-color:var(--ok)}
 .slot-txt{display:flex;flex-direction:column;gap:1px;padding:6px 8px;font-size:.78rem;color:var(--muted);line-height:1.25}
@@ -277,6 +277,7 @@ form.log .full{grid-column:1/-1}
     <div class="search"><input id="q" type="search" placeholder="Traži: vrganj, Amanita, lisičarka…" aria-label="Traži vrstu"></div>
     <div id="weekWarn"></div>
     <div class="fieldbar small" id="fieldBar"></div>
+    <div class="fieldbar" id="carBar" style="align-items:center"></div>
     <div id="offlineBar" class="note" hidden>Bez interneta: atlas, ključ, vodič, recepti i dnevnik rade normalno. Fotografije i analiza slike čekaju vezu.</div>
     <div class="season" id="seasonIdx"><p class="small">Učitavam indeks sezone…</p></div>
     <div class="season">
@@ -399,6 +400,14 @@ form.log .full{grid-column:1/-1}
       <p>U šumama kojima gospodare Hrvatske šume za branje treba dozvola. Prema pisanju medija, dozvola dopušta do 3 kg gljiva po osobi dnevno, a za branje bez dozvole prijeti kazna od 133 do 933 eura. Tartufi i zaštićena područja (nacionalni parkovi, parkovi prirode) imaju zasebna pravila. Prije sezone provjeri aktualne uvjete kod Hrvatskih šuma ili uprave parka.</p>
     </div>
 
+    <div class="panel">
+      <span class="eyebrow">Sigurnost u šumi</span>
+      <h3>Izgubio si se?</h3>
+      <p class="small">Ostani na mjestu, nazovi 112 i reci koordinate. GPS radi i bez mobilnog interneta; poziv na 112 ide preko bilo koje dostupne mreže.</p>
+      <button type="button" class="btn" onclick="whereAmI()">📍 Gdje sam? Koordinate za 112</button>
+      <div id="whereBox"></div>
+    </div>
+
     <h2>Trovanje gljivama</h2>
     <button type="button" class="btn" style="background:var(--dead-bg);color:var(--dead)" onclick="sosOpen()">🆘 Pojeo sam nepoznatu gljivu: što sad?</button>
     <p>Vrijeme od obroka do prvih simptoma najvažniji je podatak.</p>
@@ -477,6 +486,7 @@ form.log .full{grid-column:1/-1}
       <div class="full" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn ghost small" id="gpsBtn">Dodaj moju lokaciju</button><span class="small" id="gpsLbl"></span></div>
       <div class="full"><button class="btn" type="submit">Spremi nalaz</button></div>
     </form>
+    <div class="note" id="kgToday" hidden style="display:flex;flex-direction:column;gap:6px"></div>
     <div id="logList" style="display:flex;flex-direction:column;gap:8px"></div>
   </section>
   <footer class="credit">
@@ -1295,7 +1305,8 @@ function drawArt(s){
   }
   return '<svg class="art" viewBox="0 0 80 80" role="img" aria-label="Shematski prikaz"><rect width="80" height="80" fill="none"/>'+g+body+'</svg>';
 }
-const pill=st=>'<span class="st st-'+st+'">'+ST[st]+'</span>';
+const ST_IC={jestiva:"✓",uvjetno:"!",nejestiva:"–",otrovna:"✕",smrtno:"☠",nepoznata:"?"};
+const pill=st=>'<span class="st st-'+st+'"><b aria-hidden="true">'+(ST_IC[st]||"")+'</b>'+ST[st]+'</span>';
 const monthsTxt=m=>m.length===12?"cijele godine":MONTHS[m[0]-1]+"–"+MONTHS[m[m.length-1]-1];
 
 /* ---------- atlas ---------- */
@@ -1539,10 +1550,13 @@ function fillLogSelects(){
   $("#lDate").value=new Date().toISOString().slice(0,10);
 }
 function shrink(file){return new Promise(res=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const c=document.createElement("canvas"),k=Math.min(1,240/Math.max(img.width,img.height));c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.7))};img.onerror=()=>{URL.revokeObjectURL(u);res(null)};img.src=u})}
+function qtyKg(q){if(!q)return 0;const t=String(q).toLowerCase().replace(",",".");const n=parseFloat(t.replace(/[^0-9.]/g," ").trim().split(/\s+/)[0]);if(isNaN(n))return 0;return /\bdag|dkg/.test(t)?n/100:/\bg\b|grama|\dg\b/.test(t)&&!/kg/.test(t)?n/1000:n}
 function renderLog(){
   if(window.onLogChange)window.onLogChange(log);
+  {const td=new Date().toISOString().slice(0,10),kg=log.filter(x=>x.date===td).reduce((a,x)=>a+qtyKg(x.qty),0),b=$("#kgToday");
+   if(b){if(kg>0){const pct=Math.min(100,kg/3*100);b.innerHTML='<div style="display:flex;justify-content:space-between"><strong>Danas ubrano: '+kg.toFixed(2).replace(".",",").replace(/,?0+$/,"")+' kg</strong><span class="small">dopušteno 3 kg dnevno</span></div><div class="sbar" style="height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden"><i style="display:block;height:100%;width:'+pct+'%;background:'+(kg>3?"var(--bad)":kg>2.5?"var(--warn)":"var(--ok)")+'"></i></div>'+(kg>3?'<p class="small" style="color:var(--bad)">Prešao si dnevnu granicu od 3 kg.</p>':'');b.hidden=false}else b.hidden=true}}
   if(!log.length){$("#logList").innerHTML='<div class="empty">Još nema zapisa. Spremi prvi nalaz obrascem iznad.</div>';return}
-  $("#logList").innerHTML=log.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{const s=byId[e.sp];return '<div class="entry">'+(e.img?'<img src="'+e.img+'" alt="">':(s?art(s).replace('class="art"','class="ph"'):'<div class="ph"></div>'))+'<div style="min-width:0;display:flex;flex-direction:column;gap:2px"><strong>'+esc(s?s.hr:"Neodređena gljiva")+'</strong><span class="small">'+esc(e.date.split("-").reverse().join("."))+(e.reg?' · '+esc(REG[e.reg]):'')+(e.qty?' · '+esc(e.qty):'')+'</span>'+(e.place?'<span>'+esc(e.place)+'</span>':'')+(e.note?'<span class="small">'+esc(e.note)+'</span>':'')+'</div><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button class="btn small" type="button" data-share="'+e.id+'">Podijeli</button><button class="del" data-del="'+e.id+'">Obriši</button></div></div>'}).join("");
+  $("#logList").innerHTML=log.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{const s=byId[e.sp];return '<div class="entry">'+(e.img?'<img src="'+e.img+'" alt="">':(s?art(s).replace('class="art"','class="ph"'):'<div class="ph"></div>'))+'<div style="min-width:0;display:flex;flex-direction:column;gap:2px"><strong>'+esc(s?s.hr:"Neodređena gljiva")+'</strong><span class="small">'+esc(e.date.split("-").reverse().join("."))+(e.reg?' · '+esc(REG[e.reg]):'')+(e.qty?' · '+esc(e.qty):'')+'</span>'+(e.place?'<span>'+esc(e.place)+'</span>':'')+(e.note?'<span class="small">'+esc(e.note)+'</span>':'')+(e.met?'<span class="small">🌧 '+esc(e.met)+'</span>':'')+(e.lat?'<button type="button" class="chip" style="align-self:flex-start;padding:2px 10px" data-nav="'+e.id+'">🧭 Vodi me do ovog mjesta</button>':'')+'</div><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button class="btn small" type="button" data-share="'+e.id+'">Podijeli</button><button class="del" data-del="'+e.id+'">Obriši</button></div></div>'}).join("");
 }
 $("#logForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -1713,6 +1727,7 @@ function sosRender(){
   $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Hitno: trovanje gljivama</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
    '<div class="d-sec" style="border-top:0"><h2 id="dName">Pojeo sam nepoznatu gljivu</h2><p>Ne čekaj simptome. Odmah nazovi:</p>'+
    '<div class="sos-call"><a href="tel:112">112<span>Hitna pomoć</span></a><a href="tel:+38512348342">01 2348 342<span>Centar za kontrolu otrovanja, 0–24</span></a></div></div>'+tim+
+   '<div class="d-sec"><span class="eyebrow">Izgubio si se ili trebaš pomoć u šumi?</span><button type="button" class="btn ghost" onclick="whereAmI(\'whereBoxS\')">📍 Gdje sam? Koordinate za 112</button><div id="whereBoxS"></div></div>'+
    '<div class="d-sec"><span class="eyebrow">Što ponijeti u bolnicu</span><ul class="keyf"><li>Ostatke gljiva, sirove ili kuhane, i otpatke od čišćenja</li><li>Povraćeni sadržaj, ako ga ima (u vrećici ili posudi)</li><li>Podatak kada je pojedeno i kada su krenuli simptomi</li><li>Popis svih koji su jeli isto jelo; i oni moraju liječniku</li><li>Fotografije gljiva s terena, ako ih imaš</li></ul></div>'+
    '<div class="d-sec"><span class="eyebrow">Ne radi ovo</span><ul class="keyf"><li>Ne izazivaj povraćanje i ne daj mlijeko ili „domaće lijekove” bez savjeta liječnika</li><li>Ne čekaj da „prođe”: kod najopasnijih trovanja nakon prvih simptoma slijedi lažno poboljšanje</li></ul></div>';
   $("#sheet").scrollTop=0;
@@ -1846,8 +1861,63 @@ async function showPermit(){
    '<p class="small">'+esc(p.name||"")+' · vrijedi do 31. 12. '+p.year+'.</p></div>';
 }
 renderPermit();
+
+/* ---------- navigacija: auto i mjesta nalaza (GPS + kompas, radi bez signala) ---------- */
+const NAV={watch:null,target:null,pos:null,head:null,label:""};
+function hav(a,b){const R=6371e3,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function brg(a,b){const r=Math.PI/180,y=Math.sin((b.lon-a.lon)*r)*Math.cos(b.lat*r),x=Math.cos(a.lat*r)*Math.sin(b.lat*r)-Math.sin(a.lat*r)*Math.cos(b.lat*r)*Math.cos((b.lon-a.lon)*r);return(Math.atan2(y,x)/r+360)%360}
+const DIR=["sjever","sjeveroistok","istok","jugoistok","jug","jugozapad","zapad","sjeverozapad"];
+function onHead(e){let h=null;if(e.webkitCompassHeading!=null)h=e.webkitCompassHeading;else if(e.absolute&&e.alpha!=null)h=360-e.alpha;if(h!=null){NAV.head=h;navDraw()}}
+function navDraw(){const box=$("#navBox");if(!box)return;
+  if(!NAV.pos){box.innerHTML='<p class="status">Tražim GPS signal… (na otvorenom ide brže)</p>';return}
+  const d=hav(NAV.pos,NAV.target),b=brg(NAV.pos,NAV.target),rel=NAV.head!=null?(b-NAV.head+360)%360:b;
+  const dist=d<1000?Math.round(d)+" m":(d/1000).toFixed(2).replace(".",",")+" km";
+  box.innerHTML='<div style="text-align:center"><svg viewBox="0 0 100 100" width="200" height="200" style="transform:rotate('+rel+'deg);transition:transform .3s"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M50 8 L66 60 L50 50 L34 60 Z" fill="var(--accent)"/>'+(NAV.head==null?'<text x="50" y="13" font-size="9" font-weight="700" text-anchor="middle" fill="var(--muted)" transform="rotate('+(-rel)+' 50 50)">S</text>':'')+'</svg>'+
+   '<div class="sos-timer">'+dist+'</div><p>'+(d<25?'<strong>Stigao si! 🎉</strong>':'Smjer: <strong>'+DIR[Math.round(b/45)%8]+'</strong> ('+Math.round(b)+'°)')+'</p>'+
+   (NAV.head==null?'<p class="small">Kompas nije dostupan: strelica pokazuje smjer u odnosu na sjever. Okreni mobitel tako da je vrh prema sjeveru.</p>':'<p class="small">Drži mobitel vodoravno. Strelica pokazuje kamo ići.</p>')+
+   '<p class="small">Točnost GPS-a ±'+Math.round(NAV.pos.acc||0)+' m · zračna udaljenost, ne staza.</p></div>';}
+function navOpen(target,label){
+  NAV.target=target;NAV.label=label;NAV.pos=null;lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">'+esc(label)+'</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><div id="navBox"></div><button type="button" class="btn ghost small" id="navCompass" hidden>Uključi kompas</button></div>';
+  navDraw();
+  if(!navigator.geolocation){$("#navBox").innerHTML='<p class="note danger">GPS nije dostupan na ovom uređaju.</p>';return}
+  if(NAV.watch!=null)navigator.geolocation.clearWatch(NAV.watch);
+  NAV.watch=navigator.geolocation.watchPosition(p=>{NAV.pos={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};navDraw()},()=>{const b=$("#navBox");if(b)b.innerHTML='<p class="note danger">Lokacija nije dopuštena. Uključi lokaciju za ovu stranicu u postavkama preglednika.</p>'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+  const start=()=>{window.addEventListener("deviceorientationabsolute",onHead);window.addEventListener("deviceorientation",onHead)};
+  if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){const b=$("#navCompass");b.hidden=false;b.onclick=()=>DeviceOrientationEvent.requestPermission().then(r=>{if(r==="granted"){start();b.hidden=true}}).catch(()=>{})}else start();
+  if(window.gcEv)window.gcEv("navigacija");
+}
+function navStop(){if(NAV.watch!=null){navigator.geolocation.clearWatch(NAV.watch);NAV.watch=null}window.removeEventListener("deviceorientationabsolute",onHead);window.removeEventListener("deviceorientation",onHead)}
+const _closeSheetOrig=closeSheet;closeSheet=function(){navStop();_closeSheetOrig()};
+function carParked(){
+  if(!navigator.geolocation){alert("GPS nije dostupan.");return}
+  const b=$("#carBtn");if(b)b.textContent="Tražim lokaciju…";
+  navigator.geolocation.getCurrentPosition(p=>{store.set("gh-car",{lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()});renderCar();if(window.gcEv)window.gcEv("auto-spremljen")},
+   ()=>{if(b)b.textContent="Lokacija nije dopuštena";},{enableHighAccuracy:true,timeout:20000});
+}
+function renderCar(){const box=$("#carBar");if(!box)return;const c=store.get("gh-car",null);
+  if(c&&Date.now()-c.t<48*36e5){box.innerHTML='<button type="button" class="btn small" id="carGo">🚗 Vrati me do auta</button><span class="small">parkirano u '+new Date(c.t).toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit"})+'</span><button type="button" class="chip" id="carDel" style="padding:2px 10px">Obriši</button>';
+    $("#carGo").onclick=()=>navOpen(c,"Povratak do auta");$("#carDel").onclick=()=>{store.set("gh-car",null);renderCar()}}
+  else box.innerHTML='<button type="button" class="btn ghost small" id="carBtn">🚗 Parkirao sam ovdje</button><span class="small">spremi auto prije ulaska u šumu</span>';
+  const cb=$("#carBtn");if(cb)cb.onclick=carParked;}
+renderCar();
+$("#logList").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;const en=log.find(x=>x.id===b.dataset.nav);if(en&&en.lat)navOpen({lat:en.lat,lon:en.lon},"Do mjesta nalaza: "+((byId[en.sp]||{}).hr||"nalaz"))});
+
+/* ---------- Gdje sam? koordinate za 112 ---------- */
+function whereAmI(id){
+  const box=$("#"+(id||"whereBox"));if(!box)return;box.innerHTML='<p class="status">Tražim GPS… (radi i bez mobilnog interneta)</p>';
+  if(!navigator.geolocation){box.innerHTML='<p class="note danger">GPS nije dostupan.</p>';return}
+  navigator.geolocation.getCurrentPosition(p=>{const la=p.coords.latitude.toFixed(5),lo=p.coords.longitude.toFixed(5),alt=p.coords.altitude!=null?Math.round(p.coords.altitude)+" m n.v.":"";
+    const msg="HITNO. Nalazim se na: "+la+", "+lo+(alt?" ("+alt+")":"")+" (točnost ±"+Math.round(p.coords.accuracy)+" m). Karta: https://maps.google.com/?q="+la+","+lo;
+    const sep=/iPhone|iPad|iPod/.test(navigator.userAgent)?"&":"?";
+    box.innerHTML='<div class="note"><div class="sos-timer" style="font-size:1.5rem">'+la+', '+lo+'</div>'+(alt?'<p>Visina: '+alt+'</p>':'')+'<p class="small">Točnost ±'+Math.round(p.coords.accuracy)+' m. Pročitaj koordinate dispečeru 112 ili ih pošalji porukom.</p>'+
+     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><a class="btn" href="tel:112">📞 Nazovi 112</a><a class="btn ghost" href="sms:112'+sep+'body='+encodeURIComponent(msg)+'">✉️ SMS na 112</a><button type="button" class="btn ghost" id="whereCopy">Kopiraj</button></div></div>';
+    box.querySelector("#whereCopy").onclick=async e=>{try{await navigator.clipboard.writeText(msg);e.target.textContent="Kopirano ✓"}catch(_){}};
+    if(window.gcEv)window.gcEv("gdje-sam");
+  },()=>{box.innerHTML='<p class="note danger">Lokacija nije dopuštena ili nema GPS signala. Izađi na otvoreno i pokušaj ponovno.</p>'},{enableHighAccuracy:true,timeout:30000,maximumAge:0});
+}
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v1.22";
+const APP_VERSION="v1.23";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -1882,7 +1952,7 @@ function wParse(o){
   if(H){const now=Date.now(),idx=H.time.map(x=>new Date(x).getTime()).filter(x=>x<=now).length;
     if(H.relative_humidity_2m){const rh=avg(H.relative_humidity_2m.slice(Math.max(0,idx-72),idx));v.rh=rh==null?null:Math.round(rh)}
     if(H.soil_moisture_3_to_9cm){const sm=H.soil_moisture_3_to_9cm.slice(0,idx).filter(x=>x!=null);v.sm=sm.length?Math.round(sm[sm.length-1]*100)/100:null}}
-  v.sc=seasonScore(v);
+  v.sc=seasonScore(v);if(o.elevation!=null)v.el=Math.round(o.elevation);
   /* prognoza za danas + 7 dana: gljive krenu ~4–10 dana nakon kiše */
   const T=D.temperature_2m_mean,TM=D.temperature_2m_min;
   if(p.length>=21&&T){v.fc=[];
@@ -1921,6 +1991,14 @@ function fcBest(fc){if(!fc||!fc.length)return"";const mx=Math.max(...fc);if(mx<2
   return"najbolje: "+parts.slice(0,2).join(", ")}
 function fcStrip(fc){if(!fc)return"";const d=new Date();
   return '<span class="fcstrip">'+fc.map((x,i)=>'<span title="'+LEVELS[x][0]+'"><i style="background:'+LEVELS[x][1]+';opacity:'+(.35+x*.22)+'"></i>'+(i===0?"danas":DAYS[(d.getDay()+i)%7])+'</span>').join("")+'</span>'}
+const LOOK_COLD=["Craterellus cornucopioides","Hygrophorus hypothejus","Lepista nuda","Tricholoma portentosum","Tricholoma terreum","Armillaria mellea","Pleurotus ostreatus","Flammulina velutipes","Hydnum repandum","Craterellus lutescens"];
+const LOOK_WARM=["Boletus edulis","Boletus reticulatus","Boletus aereus","Boletus pinophilus","Lactarius deliciosus","Macrolepiota procera","Cantharellus cibarius","Hydnum repandum","Armillaria mellea","Russula cyanoxantha"];
+function lookFor(v){
+  if(v.r14<15)return[];
+  const cold=(v.tmin!=null&&v.tmin<=5)||v.tm<9;const list=cold?LOOK_COLD:LOOK_WARM;
+  const out=[];for(const lat of list){const s=S.find(x=>x.lat===lat);if(s&&["jestiva","uvjetno"].includes(s.st)&&s.m.includes(NOW)&&(!v.k||s.reg.includes(v.k))&&!out.includes(s))out.push(s);if(out.length>=5)break}
+  return out;
+}
 function smTxt(sm){return sm==null?"":sm<0.15?"suho tlo":sm<0.25?"umjereno vlažno tlo":sm<0.35?"vlažno tlo":"mokro tlo"}
 function sRow(v,name){
   const L=LEVELS[v.sc];
@@ -1931,13 +2009,15 @@ function sRow(v,name){
   if(v.sm!=null)det.push("Tlo: "+smTxt(v.sm)+" ("+Math.round(v.sm*100)+" % vode)");
   if(v.fr!=null)det.push("Prognoza kiše za 3 dana: "+v.fr+" mm");
   if(v.fc)det.push("Izgledi za branje idućih dana (procjena iz kiše i temperature):<br>"+fcStrip(v.fc));
+  const lf=lookFor(v);if(lf.length)det.push("Što sada tražiti (prema vremenu):<br>"+lf.map(x=>'<button type="button" class="chip" style="padding:2px 10px;margin:2px 4px 0 0" data-id="'+x.id+'" onclick="event.stopPropagation();openSheet(this.dataset.id)">'+esc(x.hr)+'</button>').join("")+'<br><span class="small">Svaku gljivu provjeri prije branja.</span>');
+  if(v.el!=null)det.push("Visina mjerne točke: "+v.el+" m n.v.");
   return '<div class="srow" role="button" tabindex="0" onclick="this.classList.toggle(\'open\')"><span>'+esc(name)+'</span><span class="sbar"><i style="width:'+((v.sc+1)*25)+'%;background:'+L[1]+'"></i></span><strong style="color:'+L[1]+'">'+L[0]+'</strong><span class="small num">'+short.join(" · ")+' <span class="smore">▾</span></span><span class="small sdet">'+det.join("<br>")+'</span></div>';
 }
 function renderSeason(d,t){
   const rows=d.filter(v=>!state.reg||v.k===state.reg);
   const me=store.get("gh-season-me",null);
   $("#seasonIdx").innerHTML='<div class="season-head"><span class="eyebrow">Indeks sezone</span><button type="button" class="btn ghost small" id="seasonMe">📍 Moja lokacija</button></div>'+
-   '<div class="sidx">'+(me&&Date.now()-me.t<3*3600e3?sRow(me.v,me.place?"📍 "+me.place:"Moja lokacija"):'')+rows.map(v=>sRow(v,v.n)).join("")+'</div>'+
+   '<div class="sidx">'+(me&&Date.now()-me.t<3*3600e3?sRow(me.v,(me.place?"📍 "+me.place:"Moja lokacija")+(me.v.el!=null?" · "+me.v.el+" m":"")):'')+rows.map(v=>sRow(v,v.n)).join("")+'</div>'+
    '<p class="small">Dodirni regiju za detalje. Procjena iz kiše, temperature, vlage zraka i vlage tla (model, sloj 3–9 cm), izvor Open-Meteo. Ažurirano '+new Date(t).toLocaleString("hr-HR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"numeric"})+'.</p>';
   $("#seasonMe").onclick=seasonMe;
 }
@@ -1996,7 +2076,10 @@ function drawMarkers(list){
   if(pts.length)map.fitBounds(pts,{padding:[30,30],maxZoom:14});
 }
 window.onLogChange=list=>{drawMarkers(list);const n=list.filter(e=>e.lat!=null).length;const c=$("#mapCount");if(c)c.textContent=n?n+(n===1?" nalazište na karti":" nalazišta na karti"):"Nalazi s lokacijom pojavit će se na karti."};
-window.logExtra=()=>{const r=curPos?{lat:curPos.lat,lon:curPos.lon,acc:curPos.acc}:{};curPos=null;const g=$("#gpsLbl");if(g)g.textContent="";return r};
+function meteoSnap(reg){const me=store.get("gh-season-me",null),c=store.get("gh-season2",null);let v=null;
+  if(me&&Date.now()-me.t<6*36e5)v=me.v;else if(c&&Date.now()-c.t<24*36e5)v=(c.d||[]).find(x=>x.k===reg)||null;
+  if(!v)return null;return v.r14+" mm kiše/14 d · "+v.tm+" °C"+(v.rh!=null?" · vlaga "+v.rh+" %":"")+(v.sm!=null?" · tlo "+Math.round(v.sm*100)+" %":"")}
+window.logExtra=()=>{const r=curPos?{lat:curPos.lat,lon:curPos.lon,acc:curPos.acc}:{};const m=meteoSnap($("#lReg")&&$("#lReg").value);if(m)r.met=m;curPos=null;const g=$("#gpsLbl");if(g)g.textContent="";return r};
 function getGPS(){
   const g=$("#gpsLbl");
   if(!navigator.geolocation){g.textContent="Uređaj ne podržava lokaciju.";return}
@@ -2006,7 +2089,7 @@ function getGPS(){
     const reg=nearestRegion(curPos.lat,curPos.lon);if(reg&&!$("#lReg").value)$("#lReg").value=reg},
    e=>{g.textContent=e.code===1?"Pristup lokaciji je odbijen u postavkama preglednika.":"Lokacija nije dostupna. Pokušaj na otvorenom."},{enableHighAccuracy:true,timeout:20000,maximumAge:60000});
 }
-function nearestRegion(lat,lon){let best=null,bd=1e9;for(const[k,[a,b]]of Object.entries(REG_POINT)){const d=(a-lat)**2+((b-lon)*Math.cos(lat*Math.PI/180))**2;if(d<bd){bd=d;best=k}}return best}
+function nearestRegion(lat,lon){let best=null,bd=1e9;for(const[k,[a,b]]of Object.entries(REG_LL)){const d=(a-lat)**2+((b-lon)*Math.cos(lat*Math.PI/180))**2;if(d<bd){bd=d;best=k}}return best}
 
 /* ---------- 4. Sigurnosna kopija dnevnika ---------- */
 function exportLog(){
