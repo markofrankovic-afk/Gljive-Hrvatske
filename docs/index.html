@@ -1915,7 +1915,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.0.6";
+const APP_VERSION="v2.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2238,32 +2238,45 @@ async function ensureModel(){
 }
 
 /* ---------- obrada slike kao kod treniranja ---------- */
-function imageTensor(file,meta){return new Promise((res,rej)=>{
-  const img=new Image(),u=URL.createObjectURL(file);
-  img.onload=()=>{
-    const S=meta.input_size[2]||meta.input_size[1];
-    const c=document.createElement("canvas");c.width=S;c.height=S;const g=c.getContext("2d");g.imageSmoothingQuality="high";
-    if(meta.resize==="stretch"){g.drawImage(img,0,0,S,S)}
-    else{const R=Math.round(S/(meta.crop_pct||0.875)),k=R/Math.min(img.width,img.height),w=Math.round(img.width*k),h=Math.round(img.height*k);g.drawImage(img,(S-w)/2,(S-h)/2,w,h)}
-    URL.revokeObjectURL(u);
-    const d=g.getImageData(0,0,S,S).data,n=S*S,arr=new Float32Array(3*n),m=meta.mean,sd=meta.std;
-    for(let i=0;i<n;i++){arr[i]=(d[i*4]/255-m[0])/sd[0];arr[n+i]=(d[i*4+1]/255-m[1])/sd[1];arr[2*n+i]=(d[i*4+2]/255-m[2])/sd[2]}
-    res(new ort.Tensor("float32",arr,[1,3,S,S]));
-  };
-  img.onerror=()=>{URL.revokeObjectURL(u);rej({code:"image_rejected"})};img.src=u;
-})}
+/* LM_OPTS: tta = više pogleda na istu sliku; season = prednost vrstama koje su u sezoni */
+const LM_OPTS=window.LM_OPTS||(window.LM_OPTS={tta:true,season:false,month:null,sNear:0.6,sFar:0.3});
+function loadImg(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);
+  img.onload=()=>{URL.revokeObjectURL(u);res(img)};img.onerror=()=>{URL.revokeObjectURL(u);rej({code:"image_rejected"})};img.src=u})}
+function viewTensor(img,meta,view){
+  const S=meta.input_size[2]||meta.input_size[1],z=view.zoom||1;
+  const c=document.createElement("canvas");c.width=S;c.height=S;const g=c.getContext("2d");g.imageSmoothingQuality="high";
+  if(view.flip){g.translate(S,0);g.scale(-1,1)}
+  if(meta.resize==="stretch"){g.drawImage(img,(S-S*z)/2,(S-S*z)/2,S*z,S*z)}
+  else{const R=Math.round(S/(meta.crop_pct||0.875))*z,k=R/Math.min(img.width,img.height),w=Math.round(img.width*k),h=Math.round(img.height*k);g.drawImage(img,(S-w)/2,(S-h)/2,w,h)}
+  const d=g.getImageData(0,0,S,S).data,n=S*S,arr=new Float32Array(3*n),m=meta.mean,sd=meta.std;
+  for(let i=0;i<n;i++){arr[i]=(d[i*4]/255-m[0])/sd[0];arr[n+i]=(d[i*4+1]/255-m[1])/sd[1];arr[2*n+i]=(d[i*4+2]/255-m[2])/sd[2]}
+  return new ort.Tensor("float32",arr,[1,3,S,S]);
+}
+async function imageTensor(file,meta){return viewTensor(await loadImg(file),meta,{})}
 function softmax(a){let mx=-Infinity;for(const v of a)if(v>mx)mx=v;let s=0;const o=new Float32Array(a.length);for(let i=0;i<a.length;i++){o[i]=Math.exp(a[i]-mx);s+=o[i]}for(let i=0;i<o.length;i++)o[i]/=s;return o}
+function lmViews(){return LM_OPTS.tta?(LM_OPTS.views||[{},{flip:1},{zoom:1.4},{zoom:0.85},{zoom:0.7}]):[{}]}
 async function classify(files){
   const{session,meta,labels}=await ensureModel();
-  let acc=null;
+  let acc=null;const views=lmViews();
   for(const f of files){
-    const t=await imageTensor(f,meta);
-    const out=await session.run({[session.inputNames[0]]:t});
-    const p=softmax(out[session.outputNames[0]].data);
-    if(!acc)acc=new Float32Array(p.length);for(let i=0;i<p.length;i++)acc[i]+=p[i]/files.length;
+    const img=await loadImg(f);
+    for(const v of views){
+      const out=await session.run({[session.inputNames[0]]:viewTensor(img,meta,v)});
+      const p=softmax(out[session.outputNames[0]].data);
+      if(!acc)acc=new Float32Array(p.length);for(let i=0;i<p.length;i++)acc[i]+=p[i]/(files.length*views.length);
+    }
   }
   const idx=[...acc.keys()].sort((a,b)=>acc[b]-acc[a]).slice(0,20);
   return idx.map(i=>({lat:labels[i],p:acc[i],s:atlasFor(labels[i])}));
+}
+/* sezona: vrste izvan sezone dobivaju manju težinu; otrovne nikad, da upozorenje ostane.
+   Isključeno: na testnim fotografijama nije donijelo poboljšanje (listopad 2026). */
+function seasonFactor(s){
+  if(!LM_OPTS.season||!s.m||!s.m.length||["otrovna","smrtno"].includes(s.st))return 1;
+  const mo=LM_OPTS.month||(typeof NOW!=="undefined"?NOW:new Date().getMonth()+1);
+  if(s.m.includes(mo))return 1;
+  const prev=mo===1?12:mo-1,next=mo===12?1:mo+1;
+  return (s.m.includes(prev)||s.m.includes(next))?LM_OPTS.sNear:LM_OPTS.sFar;
 }
 
 /* ---------- dodatna pitanja iz atlasa ---------- */
@@ -2361,7 +2374,7 @@ function buildCandidates(preds){
   return{cands:[...map.values()],others};
 }
 function applyAnswers(){
-  for(const c of LR.cands){c.score=c.w;
+  for(const c of LR.cands){c.score=c.w*seasonFactor(c.s);
     if(state.reg&&c.s.reg&&!c.s.reg.includes(state.reg))c.score*=0.4;
     for(const q of KEY)if(ans[q.k]!==undefined&&c.s[q.k]!==undefined&&String(c.s[q.k])!==String(ans[q.k]))c.score*=0.03;
     for(const[k,v]of Object.entries(LR.qa)){if(v==="?"||c.s[k]===undefined)continue;
