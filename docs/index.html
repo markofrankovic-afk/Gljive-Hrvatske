@@ -1915,7 +1915,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.1";
+const APP_VERSION="v2.1.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2297,6 +2297,20 @@ function outScore(o){let sc=o.p;
     else if(String(o.a[k])!==v)sc*=(k==="volva"||k==="hy"||k==="rm")?0.005:0.03}
   return sc}
 const QK=["rm","tr","ml","hy","volva","ring","sub","mc","mi","bk"];
+/* opasni parovi: kad su oba u igri, odmah se postavlja pitanje koje ih razlikuje */
+const PAIRS=[
+ {a:["vrganj","borov-vrganj","ljetni-vrganj","crni-vrganj"],b:["zucara"],k:"pp_zuc",q:"Pogledaj mrežicu na gornjem dijelu stručka i pore odozdo.",oa:"Mrežica sitna, svijetla; pore bijele do žutozelene",ob:"Mrežica gruba, tamnosmeđa; pore ružičaste"},
+ {a:["lisicarka"],b:["lazna-lisicarka","omphalotus"],k:"hy"},
+ {a:["biserka"],b:["panterovka"],k:"mc"},
+ {a:["pecurka"],b:["karbolna"],k:"pp_karb",q:"Zareži dno stručka. Što se dogodi i kako miriše?",oa:"Ostaje bijelo ili lagano rozo, ugodan miris gljive",ob:"Odmah jarko požuti, miris na tintu ili bolnicu"},
+ {a:["blagva"],b:["muhara"],k:"pp_blag",q:"Koje su boje listići i stručak?",oa:"Žuti, klobuk gladak",ob:"Bijeli, na klobuku bijele krpice"},
+ {a:["mednjaca"],b:["galerina"],k:"pp_gal",q:"Kakve su gljive? Ostavi klobuk na papiru 2–3 sata za otisak spora.",oa:"Veći busen, otisak spora bijel",ob:"Sitne, smeđe, otisak spora hrđavosmeđ"},
+ {a:["smrcak"],b:["hrcak"],k:"pp_smr",q:"Prereži gljivu uzdužno. Kako izgleda?",oa:"Klobuk sa saćastim udubinama, iznutra jedna šupljina",ob:"Klobuk naboran kao mozak, iznutra više komorica"},
+ {a:["krasnica-zelena"],b:["pupavka"],k:"volva"}
+];
+const PAIRQ=Object.fromEntries(PAIRS.filter(p=>p.q).map(p=>[p.k,p]));
+function pairSide(p,id){return p.a.includes(id)?"a":p.b.includes(id)?"b":null}
+
 /* Srodne vrste koje model teško razlikuje (učen na danskim fotografijama): dijele vjerojatnost, a pitanja ih razdvajaju */
 const GROUPS=[["vrganj","borov-vrganj","ljetni-vrganj","crni-vrganj"],["rujnica","smrekova-rujnica","krvna-rujnica","polukrvna-rujnica","lazna-rujnica"],
  ["prstenasti-sluzavac","zrnati-sluzavac","kravlji-sluzavac","arisev-sluzavac","pjescani-sluzavac"],["lisicarka","ljevkasta-lisicica","zlatonoga-trubaca","lazna-lisicarka","omphalotus"],
@@ -2377,6 +2391,7 @@ function applyAnswers(){
   for(const c of LR.cands){c.score=c.w*seasonFactor(c.s);
     if(state.reg&&c.s.reg&&!c.s.reg.includes(state.reg))c.score*=0.4;
     for(const q of KEY)if(ans[q.k]!==undefined&&c.s[q.k]!==undefined&&String(c.s[q.k])!==String(ans[q.k]))c.score*=0.03;
+    for(const[k,v]of Object.entries(LR.qa)){if(!PAIRQ[k]||v==="?")continue;const sd=pairSide(PAIRQ[k],c.s.id);if(sd&&sd!==v)c.score*=0.03}
     for(const[k,v]of Object.entries(LR.qa)){if(v==="?"||c.s[k]===undefined)continue;
       if(Array.isArray(c.s[k])){if(!c.s[k].includes(v))c.score*=0.1}else if(String(c.s[k])!==v)c.score*=k==="mi"?0.15:k==="rm"?0.005:k==="ml"?((v==="nema"||c.s.ml==="nema")?0.005:0.05):(k==="volva"||k==="hy")?0.005:0.03}}
   /* vjerojatnost vrsta kojih nema u atlasu ostaje u nazivniku, da postotci ne budu lažno visoki */
@@ -2400,10 +2415,18 @@ function pickQuestions(){
   }
   /* kod sunčanica pitanje o prstenu je uvijek prvo: to je ključna razlika prema otrovnim dvojnicama */
   if(ans.rm===undefined&&live.some(c=>isParasol(c.s))){const i=qs.findIndex(q=>q.k==="rm");if(i>=0)qs.splice(i,1);qs.unshift({k:"rm",H:99,opts:["da","ne"]})}
-  return qs.sort((a,b)=>b.H-a.H).slice(0,3);
+  qs.sort((a,b)=>b.H-a.H);
+  /* opasni par među vodećim kandidatima: njegovo pitanje ide prvo */
+  const lead=LR.cands.slice().sort((x,y)=>(y.score||y.w)-(x.score||x.w)).slice(0,4).filter(c=>c.w>=0.02).map(c=>c.s.id);
+  for(const p of PAIRS){
+    if(!lead.some(id=>p.a.includes(id))||!lead.some(id=>p.b.includes(id)))continue;
+    if(p.q){if(LR.qa[p.k]===undefined)qs.unshift({k:p.k,H:100,opts:["a","b"]})}
+    else if(ans[p.k]===undefined&&LR.qa[p.k]===undefined){const i=qs.findIndex(q=>q.k===p.k);const q=i>=0?qs.splice(i,1)[0]:null;if(q)qs.unshift(Object.assign(q,{H:100}))}
+  }
+  return qs.slice(0,3);
 }
 const QTEXT={mi:"Prelomi klobuk i pomiriši meso. Kako miriše?",rm:"Pomiče li se prsten gore-dolje po stručku? Lagano ga gurni prstom.",ml:"Prereži gljivu. Kakvo mlijeko curi? Pričekaj par minuta.",tr:"Uz koje drveće raste?",hy:"Što je ispod klobuka?",volva:"Ima li pri dnu stručka vrećicu (vulvu)? Iskopaj gljivu cijelu.",ring:"Ima li prsten na stručku?",sub:"Na čemu raste?",mc:"Što se dogodi s mesom kad je prerežeš?",bk:"Koje je boje klobuk?"};
-function optLabel(k,v){if(k==="ml")return ML_LABEL[v]||v;if(k==="rm")return v==="da"?"Da, klizi slobodno":"Ne, prirastao je";if(k==="mi")return MI_LABEL[v]||v;const q=KEY.find(x=>x.k===k);const o=q&&q.o.find(o=>String(o[0])===String(v));return o?o[1]:String(v).charAt(0).toUpperCase()+String(v).slice(1)}
+function optLabel(k,v){if(PAIRQ[k])return v==="a"?PAIRQ[k].oa:PAIRQ[k].ob;if(k==="ml")return ML_LABEL[v]||v;if(k==="rm")return v==="da"?"Da, klizi slobodno":"Ne, prirastao je";if(k==="mi")return MI_LABEL[v]||v;const q=KEY.find(x=>x.k===k);const o=q&&q.o.find(o=>String(o[0])===String(v));return o?o[1]:String(v).charAt(0).toUpperCase()+String(v).slice(1)}
 
 /* ---------- prikaz ---------- */
 function renderLocal(){
@@ -2424,7 +2447,7 @@ function renderLocal(){
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.kar[0]||"")+'</div>').join("");
   const qs=pickQuestions().filter(q=>LR.qa[q.k]===undefined||true);
   if(qs.length){
-    h+='<span class="eyebrow">Odgovori za točnije određivanje</span>'+qs.map(q=>'<div class="q"><strong>'+esc(QTEXT[q.k])+'</strong><div class="qopts">'+q.opts.map(v=>'<button class="chip" data-lq="'+q.k+'" data-lv="'+esc(v)+'" aria-pressed="'+(LR.qa[q.k]===v)+'">'+esc(optLabel(q.k,v))+'</button>').join("")+'<button class="chip" data-lq="'+q.k+'" data-lv="?" aria-pressed="'+(LR.qa[q.k]==="?")+'">Ne znam</button></div></div>').join("");
+    h+='<span class="eyebrow">Odgovori za točnije određivanje</span>'+qs.map(q=>'<div class="q"><strong>'+(PAIRQ[q.k]||q.H===100?'⚠️ ':'')+esc(PAIRQ[q.k]?PAIRQ[q.k].q:QTEXT[q.k])+'</strong><div class="qopts">'+q.opts.map(v=>'<button class="chip" data-lq="'+q.k+'" data-lv="'+esc(v)+'" aria-pressed="'+(LR.qa[q.k]===v)+'">'+esc(optLabel(q.k,v))+'</button>').join("")+'<button class="chip" data-lq="'+q.k+'" data-lv="?" aria-pressed="'+(LR.qa[q.k]==="?")+'">Ne znam</button></div></div>').join("");
   }
   if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+' % vjerojatnosti otpada na vrste kojih nema u atlasu.</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
