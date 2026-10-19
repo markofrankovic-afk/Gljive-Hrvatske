@@ -1906,7 +1906,22 @@ function whereAmI(id){
 
 /* ---------- Što je novo (prikaže se jednom po verziji) ---------- */
 const WHATSNEW_VER="2.0";
+/* jednokratno upozorenje prije prvog korištenja */
+function firstRun(){
+  if(store.get("gh-accept",null))return false;
+  lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Prije prvog korištenja</span><span class="grab"></span></div><div class="d-sec" style="border-top:0"><h2 id="dName">⚠️ Pročitaj prije branja</h2>'+
+   '<ul class="keyf"><li><strong>Aplikacija ne može potvrditi da je gljiva jestiva.</strong><br><span class="small">Ni prepoznavanje sa slike ni opisi nisu dokaz. Zamjena s otrovnom vrstom može biti smrtonosna.</span></li>'+
+   '<li><strong>Jedi samo gljive koje je uživo pregledao iskusni determinator</strong><br><span class="small">ili koje sam sto posto poznaješ. Jedna nepoznata gljiva u košari znači da cijela košara ide na provjeru.</span></li>'+
+   '<li><strong>Kod sumnje na trovanje odmah zovi 112</strong><br><span class="small">ili Centar za kontrolu otrovanja (01 2348 342). U aplikaciji je gumb SOS.</span></li>'+
+   '<li><strong>Aplikaciju koristiš na vlastitu odgovornost.</strong><br><span class="small">Autor ne odgovara za štetu nastalu branjem ili jedenjem gljiva.</span></li></ul>'+
+   '<button type="button" class="btn" id="acceptBtn">Razumijem i prihvaćam</button></div>';
+  $("#acceptBtn").addEventListener("click",()=>{store.set("gh-accept",new Date().toISOString());closeSheet();setTimeout(()=>whatsNew(),300)});
+  setTimeout(()=>$("#acceptBtn").focus(),50);
+  return true;
+}
 function whatsNew(force){
+  if(!force&&!store.get("gh-accept",null)){firstRun();return}
   if(!force&&store.get("gh-seen-ver",null)===WHATSNEW_VER)return;
   lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
   const L=[["🚗","Vrati me do auta","spremi gdje si parkirao, strelica te vodi natrag i bez signala"],["📍","Gdje sam? za 112","koordinate i gotov SMS za hitnu službu"],["🆘","SOS kod trovanja","pozivi, štoperica od obroka i što ponijeti u bolnicu"],["📅","Kada ići","prognoza za 7 dana po regijama i što sada tražiti"],["🌳","Ispod stabla","vrste koje rastu uz bukvu, smreku, bor…"],["📄","Moja dozvola","spremljena u aplikaciji, otvara se bez signala"],["📸","Podijeli nalaz","lijepa slika za Facebook, bez otkrivanja mjesta"],["🧭","Dnevnik","GPS mjesta nalaza, vrijeme uz nalaz i brojač 3 kg"],["🧠","Kviz u 3 razine","s ocjenom na kraju"],["Aa","Veća slova","jednim dodirom, gore desno"]];
@@ -1915,7 +1930,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.1.1";
+const APP_VERSION="v2.1.2";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2443,7 +2458,8 @@ function renderLocal(){
   if(LR.maxp<0.35)h+='<div class="note">Model nije siguran (najveća vjerojatnost '+Math.round(LR.maxp*100)+' %). Snimi gljivu izbliza, odozdo i cijelu s dnom, pa pokušaj ponovno.</div>';
   if(top.some(c=>c.s.psi))h+='<div class="note dead"><strong>Moguća psihoaktivna vrsta.</strong> Takve su gljive zakonom zabranjene i nisu jestive, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama. Ne beri ih.</div>';
   if(top.some(c=>["otrovna","smrtno"].includes(c.s.st))||danger.length)h+='<div class="warnbar">Među mogućim vrstama ima otrovnih. Ne beri za jelo bez provjere uživo.</div>';
-  h+='<span class="eyebrow">Najvjerojatnije</span>'+top.map(c=>'<div class="cand"><span class="conf num">'+Math.round(c.rel*100)+' %</span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
+  h+='<div class="note danger"><strong>Ovo je procjena sa slike, nije potvrda.</strong> Postotak pokazuje sličnost s fotografijama, ne sigurnost da je gljiva jestiva. Ne jedi ništa samo na temelju aplikacije: odnesi gljivu determinatoru.</div>';
+  h+='<span class="eyebrow">Najsličnije vrste</span>'+top.map(c=>'<div class="cand"><span class="conf num" title="sličnost">'+Math.round(c.rel*100)+' %<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.kar[0]||"")+'</div>').join("");
   const qs=pickQuestions().filter(q=>LR.qa[q.k]===undefined||true);
   if(qs.length){
