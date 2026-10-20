@@ -1945,7 +1945,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.2";
+const APP_VERSION="v2.2.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2202,7 +2202,7 @@ document.addEventListener("click",e=>{
     lg.addEventListener("click",()=>{window.gcEv&&gcEv("oprema-logo");openMerch()});
     lg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openMerch()}})}
   const ft=[...document.querySelectorAll("footer p, .foot p")].find(p=>p.textContent.includes("Podrži razvoj"));
-  if(ft){const a=document.createElement("a");a.href="#";a.textContent="🍄 Gljivarska oprema";a.addEventListener("click",e=>{e.preventDefault();window.gcEv&&gcEv("oprema-podnozje");openMerch()});ft.append(" · ",a)}
+  if(ft){const a=document.createElement("a");a.href="#";a.textContent="🍄\u00a0Gljivarska oprema";a.style.whiteSpace="nowrap";a.addEventListener("click",e=>{e.preventDefault();window.gcEv&&gcEv("oprema-podnozje");openMerch()});ft.append(" · ",a)}
 })();
 
 /* ---------- Anonimni brojač posjeta (GoatCounter, bez kolačića i osobnih podataka) ---------- */
