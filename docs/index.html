@@ -34,6 +34,12 @@ img{max-width:100%}
 .wphoto figcaption{font-size:.75rem;color:var(--muted);padding:6px 10px}
 .wphoto a{color:inherit}
 .ph-wait{font-size:.85rem;color:var(--muted);padding:6px 0}
+/* oprema */
+.merch{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:12px}
+.merch-it{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
+.merch-it img{width:100%;height:auto;display:block;background:#E9E4DA}
+.merch-b{padding:12px;display:flex;flex-direction:column;gap:6px}
+.merch-a{margin-top:4px;display:flex;flex-direction:column;gap:6px}
 #appVersion{max-width:760px;margin:24px auto 0;font-size:.75rem;color:var(--muted)}
 .leaflet-container{background:var(--surface-2)}
 </style>
@@ -1939,7 +1945,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.1.6";
+const APP_VERSION="v2.2";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2153,6 +2159,51 @@ function initPWA(){
   }
 }
 initPWA();
+
+/* ---------- Gljivarska oprema: anketa interesa (bez prodaje, bez cijena) ---------- */
+const MERCH=[
+ ["nozic","Nožić za gljive","Sklopivi nožić s četkicom i ravnalom, gravirani znak na dršci."],
+ ["majica-natpis","Majica „Moje mjesto je tajna”","Tamnozelena, natpis s koordinatama koje nitko ne zna."],
+ ["majica-logo","Majica s pečatom","Tamnozelena, veliki pečat s vrganjem i šumom."],
+ ["daska","Daska za rezanje","Drvena, „Bereš samo ono što poznaješ.” i QR kod aplikacije."],
+ ["otvarac","Drveni otvarač za boce","„Za dobar ulov!”"],
+ ["podmetaci","Podmetači od pluta","Set od 4: vrganj, lisičarka, sunčanica, smrčak."],
+ ["privjesak","Drveni privjesak","Sprijeda pečat, straga QR kod aplikacije."],
+ ["plocica","Pločica za košaru","Tvoje ime i QR kod, visi na ručki košare."]
+];
+const MERCH_P=["do 10 €","10–20 €","20–30 €","više od 30 €"];
+function merchVotes(){return store.get("gh-merch",{})||{}}
+function openMerch(){
+  try{lastFocus=document.activeElement}catch(e){}
+  $("#scrim").hidden=false;$("#sheet").hidden=false;
+  const v=merchVotes();
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljivarska oprema</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
+   '<div class="d-sec" style="border-top:0"><h2 id="dName">🍄 Gljivarska oprema</h2>'+
+   '<p>Ručno gravirano u Gorskom kotaru. <strong>Aplikacija je i ostaje besplatna, bez reklama i sa svim funkcijama.</strong> Ovo je samo za one koji bi htjeli podržati razvoj i nositi komad šume sa sobom.</p>'+
+   '<p class="small">Još ništa ne prodajem. Javi što bi te zanimalo, anonimno, bez imena i e-maila.</p>'+
+   '<div class="merch">'+MERCH.map(([id,n,d])=>'<div class="merch-it" data-m="'+id+'"><img src="merch/'+id+'.webp" alt="'+esc(n)+'" loading="lazy" width="720" height="'+(id.startsWith("majica")?720:id==="nozic"?240:480)+'"><div class="merch-b"><strong>'+esc(n)+'</strong><span class="small">'+esc(d)+'</span><div class="merch-a">'+merchAct(id,v[id])+'</div></div></div>').join("")+'</div></div>';
+  $("#sheet").scrollTop=0;setTimeout(()=>{const c=$("#closeSheet");c&&c.focus()},30);
+}
+function merchAct(id,vote){
+  if(!vote)return '<button type="button" class="btn small" data-mz="'+id+'">👍 Zanima me</button>';
+  if(vote==="z")return '<span class="small">Koliko bi otprilike dao?</span><div class="qopts">'+MERCH_P.map((p,i)=>'<button type="button" class="chip" data-mp="'+id+'" data-i="'+i+'">'+p+'</button>').join("")+'</div>';
+  return '<span class="small">✓ Hvala! Zabilježeno.</span>';
+}
+document.addEventListener("click",e=>{
+  const z=e.target.closest&&e.target.closest("[data-mz]"),pp=e.target.closest&&e.target.closest("[data-mp]");
+  if(!z&&!pp)return;
+  const v=merchVotes();
+  if(z){const id=z.dataset.mz;if(!v[id]){v[id]="z";store.set("gh-merch",v);window.gcEv&&gcEv("oprema-"+id)}z.closest(".merch-a").innerHTML=merchAct(id,v[id])}
+  else{const id=pp.dataset.mp,i=+pp.dataset.i;if(v[id]==="z"){v[id]="p"+i;store.set("gh-merch",v);window.gcEv&&gcEv("oprema-"+id+"-cijena-"+["do10","10-20","20-30","30plus"][i])}pp.closest(".merch-a").innerHTML=merchAct(id,v[id])}
+});
+(function(){
+  const lg=document.querySelector(".brand-logo");
+  if(lg){lg.style.cursor="pointer";lg.setAttribute("role","button");lg.setAttribute("tabindex","0");lg.setAttribute("aria-label","Gljivarska oprema");
+    lg.addEventListener("click",()=>{window.gcEv&&gcEv("oprema-logo");openMerch()});
+    lg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openMerch()}})}
+  const ft=[...document.querySelectorAll("footer p, .foot p")].find(p=>p.textContent.includes("Podrži razvoj"));
+  if(ft){const a=document.createElement("a");a.href="#";a.textContent="🍄 Gljivarska oprema";a.addEventListener("click",e=>{e.preventDefault();window.gcEv&&gcEv("oprema-podnozje");openMerch()});ft.append(" · ",a)}
+})();
 
 /* ---------- Anonimni brojač posjeta (GoatCounter, bez kolačića i osobnih podataka) ---------- */
 (function(){
