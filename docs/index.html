@@ -107,6 +107,7 @@ a.btn{display:inline-block;text-decoration:none}
 .st b{font-weight:900;font-size:.95em;line-height:1}
 .st-jestiva{color:var(--ok);background:var(--ok-bg)}
 .st-uvjetno{color:var(--warn);background:var(--warn-bg)}
+.st-oprez{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn)}
 .st-nepoznata{color:var(--grey);background:var(--grey-bg)}
 .st-nejestiva{color:var(--grey);background:var(--grey-bg)}
 .st-otrovna{color:var(--bad);background:var(--bad-bg)}
@@ -519,7 +520,7 @@ const MONTHS=["sij","velj","ožu","tra","svi","lip","srp","kol","ruj","lis","stu
 const MONTHS_FULL=["siječanj","veljača","ožujak","travanj","svibanj","lipanj","srpanj","kolovoz","rujan","listopad","studeni","prosinac"];
 const REG={gk:"Gorski kotar",li:"Lika",sh:"Središnja Hrvatska",za:"Zagorje",me:"Međimurje i Podravina",sl:"Slavonija i Baranja",is:"Istra",kv:"Kvarner i otoci",da:"Dalmacija"};
 const ALL=Object.keys(REG);
-const ST={jestiva:"Jestiva",uvjetno:"Uvjetno jestiva",nejestiva:"Nejestiva",otrovna:"Otrovna",smrtno:"Smrtno otrovna",nepoznata:"Nije procijenjena"};
+const ST={jestiva:"Tradicionalno jestiva",uvjetno:"Uvjetno jestiva",nejestiva:"Nejestiva",otrovna:"Otrovna",smrtno:"Smrtno otrovna",nepoznata:"Nije procijenjena"};
 const HY={listici:"Listići",cjevcice:"Cjevčice (spužvasto)",rebra:"Rebra / glatko",ostalo:"Ostalo (saće, gomolj)"};
 const range=(a,b)=>{const r=[];let m=a;for(;;){r.push(m);if(m===b)break;m=m%12+1}return r};
 
@@ -1312,6 +1313,9 @@ function drawArt(s){
 }
 const ST_IC={jestiva:"✓",uvjetno:"!",nejestiva:"–",otrovna:"✕",smrtno:"☠",nepoznata:"?"};
 const pill=st=>'<span class="st st-'+st+'"><b aria-hidden="true">'+(ST_IC[st]||"")+'</b>'+ST[st]+'</span>';
+/* jestiva vrsta koja ima otrovnog ili smrtno otrovnog dvojnika */
+const careTwins=s=>(["jestiva","uvjetno"].includes(s.st)?(s.zam||[]).map(z=>byId[z]).filter(z=>z&&["otrovna","smrtno"].includes(z.st)):[]);
+const carePill=s=>careTwins(s).length?'<span class="st st-oprez" title="Ima otrovnog dvojnika"><b aria-hidden="true">⚠</b>Potreban oprez</span>':'';
 const monthsTxt=m=>m.length===12?"cijele godine":MONTHS[m[0]-1]+"–"+MONTHS[m[m.length-1]-1];
 
 /* ---------- atlas ---------- */
@@ -1337,7 +1341,7 @@ function filtered(){
   return S.filter(s=>(!tr||tr[1].test(s.stan||"")||(tm[s.id]&&(tm[s.id].includes(tk)||(tk==="crnogorica"&&tm[s.id].some(x=>["smreka","jela","bor","ariš"].includes(x))))))&&(!state.rl||s.rl)&&(state.rl||!state.month||s.m.includes(state.month))&&(!state.reg||s.reg.includes(state.reg))&&(!state.st.size||state.st.has(s.st))&&(!q||norm(s.hr+" "+s.lat+" "+(s.alt||"")).includes(q)));
 }
 function cardHTML(s){
-  return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
+  return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+carePill(s)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
 }
 function renderList(){
   const r=filtered();
@@ -1363,9 +1367,9 @@ function openSheet(id){
   const look=s.zam.length?'<div class="d-sec"><span class="eyebrow">Ne zamijeni s</span><div class="look">'+s.zam.map(z=>byId[z]).filter(Boolean).map(z=>'<button data-id="'+z.id+'">'+pill(z.st)+'<span><strong>'+esc(z.hr)+'</strong><br><span class="lat">'+esc(z.lat)+'</span></span></button>').join("")+'</div></div>':"";
   const rec=s.rec&&s.rec.length?'<div class="d-sec"><span class="eyebrow">Priprema</span>'+s.rec.map(r=>'<div class="recipe"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'</div>':"";
   $("#sheet").innerHTML='<div class="sheet-bar"><span></span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
-   '<div class="d-head">'+art(s)+'<div style="min-width:0;display:flex;flex-direction:column;gap:4px"><h2 id="dName"'+(s.hr===s.lat?' style="font-style:italic"':'')+'>'+esc(s.hr)+'</h2><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span>'+(s.alt?'<span class="small">Zove se i: '+esc(s.alt)+'</span>':'')+'<div class="line" style="display:flex;gap:6px;flex-wrap:wrap">'+pill(s.st)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+'</div></div></div>'+
+   '<div class="d-head">'+art(s)+'<div style="min-width:0;display:flex;flex-direction:column;gap:4px"><h2 id="dName"'+(s.hr===s.lat?' style="font-style:italic"':'')+'>'+esc(s.hr)+'</h2><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span>'+(s.alt?'<span class="small">Zove se i: '+esc(s.alt)+'</span>':'')+'<div class="line" style="display:flex;gap:6px;flex-wrap:wrap">'+pill(s.st)+carePill(s)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+'</div></div></div>'+
    '<div id="dPhoto">'+photoFigure(s)+'</div><div class="d-sec"><span class="eyebrow">Glavne karakteristike</span><ul class="keyf">'+s.kar.map(k=>'<li>'+esc(k)+'</li>').join("")+'</ul></div>'+
-   (psiNote||dangerNote||zastNote||rlNote?'<div class="d-sec">'+psiNote+rlNote+zastNote+dangerNote+'</div>':'')+
+   (careTwins(s).length?'<div class="d-sec"><div class="note"><strong>⚠ Potreban oprez:</strong> ima otrovnog dvojnika ('+careTwins(s).map(z=>esc(z.hr)).join(", ")+'). Prije jela obavezno neka je pregleda determinator.</div></div>':'')+(psiNote||dangerNote||zastNote||rlNote?'<div class="d-sec">'+psiNote+rlNote+zastNote+dangerNote+'</div>':'')+
    (s.k?'<div class="d-sec"><span class="eyebrow">Opis</span><dl class="morph"><dt>Klobuk</dt><dd>'+esc(s.k.klobuk)+'</dd><dt>Ispod</dt><dd>'+esc(s.k.himenofor)+'</dd><dt>Stručak</dt><dd>'+esc(s.k.strucak)+'</dd><dt>Meso</dt><dd>'+esc(s.k.meso)+'</dd>'+(s.spore?'<dt>Spore</dt><dd>Otisak: '+esc(s.spore)+'</dd>':'')+'</dl></div>':'')+
    (s.gdkb?'<div class="d-sec"><span class="eyebrow">Opširnije</span><a class="gd" href="http://gdkb.hr/baza-gljiva/'+encodeURIComponent(s.gdkb)+'/" target="_blank" rel="noopener">Opis i fotografije u bazi Gljivarskog društva Kamilo Blagaić ↗</a></div>':'')+
    '<div class="d-sec"><span class="eyebrow">Sezona</span><div class="cal">'+MONTHS.map((m,i)=>'<span class="'+(s.m.includes(i+1)?"on":"")+'">'+m+'</span>').join("")+'</div></div>'+
@@ -1930,7 +1934,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.1.2";
+const APP_VERSION="v2.1.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2459,7 +2463,7 @@ function renderLocal(){
   if(top.some(c=>c.s.psi))h+='<div class="note dead"><strong>Moguća psihoaktivna vrsta.</strong> Takve su gljive zakonom zabranjene i nisu jestive, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama. Ne beri ih.</div>';
   if(top.some(c=>["otrovna","smrtno"].includes(c.s.st))||danger.length)h+='<div class="warnbar">Među mogućim vrstama ima otrovnih. Ne beri za jelo bez provjere uživo.</div>';
   h+='<div class="note danger"><strong>Ovo je procjena sa slike, nije potvrda.</strong> Postotak pokazuje sličnost s fotografijama, ne sigurnost da je gljiva jestiva. Ne jedi ništa samo na temelju aplikacije: odnesi gljivu determinatoru.</div>';
-  h+='<span class="eyebrow">Najsličnije vrste</span>'+top.map(c=>'<div class="cand"><span class="conf num" title="sličnost">'+Math.round(c.rel*100)+' %<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
+  h+='<span class="eyebrow">Najsličnije vrste</span>'+top.map(c=>'<div class="cand"><span class="conf num" title="sličnost">'+Math.round(c.rel*100)+' %<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+carePill(c.s)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.kar[0]||"")+'</div>').join("");
   const qs=pickQuestions().filter(q=>LR.qa[q.k]===undefined||true);
   if(qs.length){
