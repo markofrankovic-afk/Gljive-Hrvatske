@@ -1939,13 +1939,13 @@ function whatsNew(force){
   if(!force&&!store.get("gh-accept",null)){firstRun();return}
   if(!force&&store.get("gh-seen-ver",null)===WHATSNEW_VER)return;
   lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
-  const L=[["🚗","Vrati me do auta","spremi gdje si parkirao, strelica te vodi natrag i bez signala"],["📍","Gdje sam? za 112","koordinate i gotov SMS za hitnu službu"],["🆘","SOS kod trovanja","pozivi, štoperica od obroka i što ponijeti u bolnicu"],["📅","Kada ići","prognoza za 7 dana po regijama i što sada tražiti"],["🌳","Ispod stabla","vrste koje rastu uz bukvu, smreku, bor…"],["📄","Moja dozvola","spremljena u aplikaciji, otvara se bez signala"],["📸","Podijeli nalaz","lijepa slika za Facebook, bez otkrivanja mjesta"],["🧭","Dnevnik","GPS mjesta nalaza, vrijeme uz nalaz i brojač 3 kg"],["🧠","Kviz u 3 razine","s ocjenom na kraju"],["Aa","Veća slova","jednim dodirom, gore desno"]];
+  const L=[["🚗","Vrati me do auta","spremi gdje si parkirao, strelica te vodi natrag i bez signala"],["📍","Gdje sam? za 112","koordinate i gotov SMS za hitnu službu"],["🆘","SOS kod trovanja","pozivi, štoperica od obroka i što ponijeti u bolnicu"],["🌦️","Kada ići","prognoza za 7 dana po regijama i što sada tražiti"],["🌳","Ispod stabla","vrste koje rastu uz bukvu, smreku, bor…"],["📄","Moja dozvola","spremljena u aplikaciji, otvara se bez signala"],["📸","Podijeli nalaz","lijepa slika za Facebook, bez otkrivanja mjesta"],["🧭","Dnevnik","GPS mjesta nalaza, vrijeme uz nalaz i brojač 3 kg"],["🧠","Kviz u 3 razine","s ocjenom na kraju"],["Aa","Veća slova","jednim dodirom, gore desno"]];
   $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 2.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
   store.set("gh-seen-ver",WHATSNEW_VER);
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.2.2";
+const APP_VERSION="v2.2.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2030,7 +2030,7 @@ function lookFor(v){
 function smTxt(sm){return sm==null?"":sm<0.15?"suho tlo":sm<0.25?"umjereno vlažno tlo":sm<0.35?"vlažno tlo":"mokro tlo"}
 function sRow(v,name){
   const L=LEVELS[v.sc];
-  const short=[v.r14+" mm",v.tm+" °C"];if(v.rh!=null)short.push(v.rh+" % vlage");const fb=fcBest(v.fc);if(fb)short.push("📅 "+fb);
+  const short=[v.r14+" mm",v.tm+" °C"];if(v.rh!=null)short.push(v.rh+" % vlage");const fb=fcBest(v.fc);if(fb)short.push("prognoza: "+fb.replace(/^najbolje: /,"najbolje "));
   const det=["Kiša: "+v.r14+" mm u 14 dana, "+v.r5+" mm u zadnjih 5 dana"];
   if(v.tmin!=null)det.push("Temperatura: prosjek tjedna "+v.tm+" °C, zadnja 3 dana min "+v.tmin+" / max "+v.tmax+" °C");
   if(v.rh!=null)det.push("Vlaga zraka (3 dana): "+v.rh+" %");
