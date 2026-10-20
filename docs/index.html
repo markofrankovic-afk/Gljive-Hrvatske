@@ -34,6 +34,8 @@ img{max-width:100%}
 .wphoto figcaption{font-size:.75rem;color:var(--muted);padding:6px 10px}
 .wphoto a{color:inherit}
 .ph-wait{font-size:.85rem;color:var(--muted);padding:6px 0}
+/* karta ne smije prekriti prozore */
+#map{position:relative;z-index:0}
 /* oprema */
 .merch{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:12px}
 .merch-it{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
@@ -1946,7 +1948,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.2.4";
+const APP_VERSION="v2.2.5";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
