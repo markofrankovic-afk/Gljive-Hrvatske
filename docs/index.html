@@ -14,8 +14,8 @@
 <meta property="og:locale" content="hr_HR">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192-v2.png">
+<link rel="apple-touch-icon" href="icons/icon-192-v2.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="vendor/leaflet.css">
 <script src="vendor/leaflet.js"></script>
@@ -77,6 +77,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 header.top{padding-block:20px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+header.top .brand{display:flex;align-items:center;gap:12px;min-width:0}.brand-logo{flex:0 0 auto;border-radius:12px}
+@media (max-width:420px){.brand-logo{width:62px;height:62px}}
 header.top .sub{color:var(--muted);font-size:.95rem}
 .view{display:flex;flex-direction:column;gap:16px;padding-block:8px 0}
 
@@ -272,9 +274,12 @@ form.log .full{grid-column:1/-1}
 <body>
 <div class="wrap">
   <header class="top">
-    <div>
-      <div class="eyebrow">Terenski vodič</div>
-      <h1>Gljive Hrvatske</h1>
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 200 200" width="52" height="52" aria-hidden="true"><rect width="200" height="200" rx="44" fill="#1B2E23"/><g transform="translate(14 8) scale(.86)"><path d="M44 58 L58 86 L52 86 L64 112 L57 112 L70 140 L50 140 L50 150 L38 150 L38 140 L18 140 L31 112 L24 112 L36 86 L30 86 Z" fill="#3E5F3F"/><path d="M160 80 L171 101 L166 101 L176 122 L170 122 L180 142 L165 142 L165 150 L155 150 L155 142 L140 142 L150 122 L144 122 L154 101 L149 101 Z" fill="#3E5F3F"/><path d="M26 162 C60 151 140 151 174 162 C150 169 50 169 26 162 Z" fill="#3E5F3F"/><path d="M84 112 C80 126 70 140 72 152 C74 162 88 166 100 166 C112 166 126 162 128 152 C130 140 120 126 116 112 Z" fill="#F4EDE1"/><path d="M42 108 C38 70 66 44 100 44 C134 44 162 70 158 108 C140 116 60 116 42 108 Z" fill="#E39A3B"/><g fill="#F4EDE1"><circle cx="70" cy="88" r="7.5"/><circle cx="101" cy="62" r="7.5"/><circle cx="95" cy="95" r="7.5"/><circle cx="131" cy="82" r="7.5"/></g></g></svg>
+      <div>
+        <div class="eyebrow">Terenski vodič</div>
+        <h1>Gljive Hrvatske</h1>
+      </div>
     </div>
     <div class="hdr-r"><div class="hdr-tools"><button type="button" class="tool-btn" id="bigTxt" aria-pressed="false" title="Veća slova">Aa</button><button type="button" class="tool-btn sos" id="sosBtn" title="Pojeo sam nepoznatu gljivu">SOS</button></div><div class="sub" id="todayLbl"></div></div>
   </header>
@@ -1934,7 +1939,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.1.5";
+const APP_VERSION="v2.1.6";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */

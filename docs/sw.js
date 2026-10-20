@@ -2,10 +2,10 @@
    - Ljuska aplikacije: spremljena unaprijed, uvijek dostupna.
    - Fotografije s Wikipedije i kartice karte: spremaju se dok ih gledaš, s ograničenjem broja.
    - Analiza slike i vremenski podaci: uvijek s mreže. */
-const VERSION = "gh-v2.1.5";
+const VERSION = "gh-v2.1.6";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "vendor/leaflet.js", "vendor/leaflet.css",
   "vendor/images/marker-icon.png", "vendor/images/marker-shadow.png", "vendor/images/layers.png",
-  "icons/icon-192.png", "icons/icon-512.png"];
+  "icons/icon-192-v2.png", "icons/icon-512-v2.png"];
 const LIMITS = { "gh-tiles": 1500, "gh-photos": 400 };
 
 self.addEventListener("install", e => {
