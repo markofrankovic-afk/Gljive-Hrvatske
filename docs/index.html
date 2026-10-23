@@ -342,7 +342,7 @@ form.log .full{grid-column:1/-1}
       <div class="list" id="keyList"></div>
     </div>
 
-    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model se preuzme jednom (oko 35 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model prepoznaje 581 vrstu iz atlasa. Preuzme se jednom (oko 34 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="panel" id="aiPanel" hidden>
       <h2>3. Analiza slike</h2>
       <div id="aiUnavailable" class="note" hidden>Analiza slike trenutno nije dostupna.</div>
@@ -513,7 +513,7 @@ form.log .full{grid-column:1/-1}
     <div id="logList" style="display:flex;flex-direction:column;gap:8px"></div>
   </section>
   <footer class="credit">
-    <p><strong>Gljive Hrvatske <span id="verTxt">2.0</span></strong> · Autor: Marko Franković · <a href="#" onclick="whatsNew(true);return false">Što je novo</a></p>
+    <p><strong>Gljive Hrvatske <span id="verTxt">2.0</span></strong> · Autor: Marko Franković · <a href="#" onclick="whatsNew(true);return false">Što je novo</a> · <a href="#" onclick="zasluge();return false">Zasluge</a></p>
     <p>Podrži razvoj: <a href="https://kekspay.hr/keks?a=kekstag&amp;tag=#markof355" target="_blank" rel="noopener">kava za autora preko KEKS Pay</a> (#markof355)</p>
     <p>Prijedlozi i prijave grešaka: <a href="mailto:marko.frankovic@gmail.com?subject=Gljive%20Hrvatske%20%E2%80%93%20prijedlog&body=Bok%20Marko%2C%0A%0AImam%20prijedlog%20za%20aplikaciju%20Gljive%20Hrvatske%3A%0A%0A%0A%28Ako%20prijavljuje%C5%A1%20gre%C5%A1ku%3A%20%C5%A1to%20si%20radio%2C%20%C5%A1to%20se%20dogodilo%20i%20na%20kojem%20mobitelu.%29%0A">marko.frankovic@gmail.com</a></p>
     <p>Aplikaciju koristiš na vlastitu odgovornost. Opisi, prepoznavanje sa slike i recepti služe kao pomoć i ne zamjenjuju provjeru iskusnog determinatora. Autor ne odgovara za štetu nastalu branjem ili jedenjem gljiva.</p>
@@ -1996,9 +1996,23 @@ function whatsNew(force){
   $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 2.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
   store.set("gh-seen-ver",WHATSNEW_VER);
 }
+function zasluge(){
+  lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
+  const base=(typeof LMCFG!=="undefined"&&LMCFG.base)||"model/";
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Zasluge</h2>'+
+   '<p><strong>Prepoznavanje sa slike.</strong> Vlastiti model Gljiva Hrvatske, izgrađen na osnovnom modelu EfficientNet-B2 iz biblioteke timm (Ross Wightman, licenca Apache 2.0).</p>'+
+   '<p id="zasBroj">Model je učio na fotografijama koje su autori zajednice <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> objavili pod slobodnim licencama CC0 i CC BY. Hvala svima.</p>'+
+   '<p><strong>Fotografije u atlasu.</strong> Autor i licenca navedeni su ispod svake fotografije.</p>'+
+   '<details><summary>Autori fotografija za učenje modela</summary><p class="small" id="zasAut">Učitavam popis…</p></details></div>';
+  fetch(base+"zasluge.json").then(r=>{if(!r.ok)throw 0;return r.json()}).then(z=>{
+    const n=x=>x.toLocaleString("hr-HR");
+    $("#zasBroj").innerHTML='Model je učio na '+n(z.fotografija)+' fotografija ('+n(z.vrsta)+' vrsta) koje je '+n(z.autori.length)+' autora zajednice <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> objavilo pod slobodnim licencama CC BY ('+n(z.cc_by)+') i CC0 ('+n(z.cc0)+'). Hvala svima.';
+    $("#zasAut").textContent=z.autori.map(a=>a[0]+" ("+a[1]+")").join(", ")+".";
+  }).catch(()=>{const e=$("#zasAut");if(e)e.textContent="Popis autora trenutno nije dostupan (potreban je internet)."});
+}
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.3";
+const APP_VERSION="v2.4";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2280,10 +2294,11 @@ document.addEventListener("click",e=>{
 
 const LMCFG={base:"model/",ortScript:"vendor/ort/ort.wasm.min.js",mjsBase:"vendor/ort/",wasm:"vendor/ort/ort-wasm-simd-threaded.wasm",server:true};
 /* ================= Prepoznavanje na uređaju (besplatno, radi bez interneta) =================
-   Model: Danish Fungi 2020 (BVRA), izvezen u ONNX skriptom alati/pripremi_model.py.
+   Model: vlastiti model Gljiva Hrvatske (EfficientNet-B2, 581 vrsta iz atlasa), učen na fotografijama
+   zajednice iNaturalist pod licencama CC0 i CC BY; bilježnica za treniranje: trening/GljiveHrvatske_model.ipynb.
    Datoteke: model/model.onnx, model/labels.json (indeks -> latinski naziv), model/meta.json (ulaz i normalizacija). */
 
-/* Stari i novi latinski nazivi: model koristi nazive iz baze DF20, atlas novije. */
+/* Stari i novi latinski nazivi (ostalo iz ranijeg modela; vlastiti model koristi nazive iz atlasa). */
 const SYN={
  "boletus badius":"Imleria badia","xerocomus badius":"Imleria badia",
  "boletus erythropus":"Neoboletus erythropus","boletus luridiformis":"Neoboletus erythropus","neoboletus luridiformis":"Neoboletus erythropus","neoboletus praestigiator":"Neoboletus erythropus",
@@ -2390,7 +2405,7 @@ async function classify(files){
     const img=await loadImg(f);
     for(const v of views){
       const out=await session.run({[session.inputNames[0]]:viewTensor(img,meta,v)});
-      const p=softmax(out[session.outputNames[0]].data);
+      const T=meta.temperature||1,raw=out[session.outputNames[0]].data,p=softmax(T===1?raw:raw.map(v=>v/T));
       if(!acc)acc=new Float32Array(p.length);for(let i=0;i<p.length;i++)acc[i]+=p[i]/(files.length*views.length);
     }
   }
@@ -2439,7 +2454,7 @@ const PAIRS=[
 const PAIRQ=Object.fromEntries(PAIRS.filter(p=>p.q).map(p=>[p.k,p]));
 function pairSide(p,id){return p.a.includes(id)?"a":p.b.includes(id)?"b":null}
 
-/* Srodne vrste koje model teško razlikuje (učen na danskim fotografijama): dijele vjerojatnost, a pitanja ih razdvajaju */
+/* Srodne vrste koje model teško razlikuje : dijele vjerojatnost, a pitanja ih razdvajaju */
 const GROUPS=[["vrganj","borov-vrganj","ljetni-vrganj","crni-vrganj"],["rujnica","smrekova-rujnica","krvna-rujnica","polukrvna-rujnica","lazna-rujnica"],
  ["prstenasti-sluzavac","zrnati-sluzavac","kravlji-sluzavac","arisev-sluzavac","pjescani-sluzavac"],["lisicarka","ljevkasta-lisicica","zlatonoga-trubaca","lazna-lisicarka","omphalotus"],
  ["brezov-djed","grabov-djed","crveni-hrapavac"],
@@ -2581,7 +2596,7 @@ function renderLocal(){
   if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+' % vjerojatnosti otpada na vrste kojih nema u atlasu.</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+(best?'<button class="btn ghost small" id="lmLog" data-sp="'+best.s.id+'">Zapiši u dnevnik</button>':'')+'</div>';
-  h+='<p class="small">Model je učen na fotografijama gljiva iz Danske (Danish Fungi 2020). Mediteranske vrste može slabije prepoznavati.</p>';
+  h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 147.000 fotografija zajednice iNaturalist za 581 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
   $("#lmOut").innerHTML=h;
 }
 async function runLocal(){

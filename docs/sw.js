@@ -2,7 +2,8 @@
    - Ljuska aplikacije: spremljena unaprijed, uvijek dostupna.
    - Fotografije s Wikipedije i kartice karte: spremaju se dok ih gledaš, s ograničenjem broja.
    - Analiza slike i vremenski podaci: uvijek s mreže. */
-const VERSION = "gh-v2.3";
+const VERSION = "gh-v2.4";
+const MODEL_CACHE = "gh-model-v3";  /* vlastiti model v3; stari model se briše */
 const SHELL = ["./", "index.html", "manifest.webmanifest", "vendor/leaflet.js", "vendor/leaflet.css",
   "vendor/images/marker-icon.png", "vendor/images/marker-shadow.png", "vendor/images/layers.png",
   "icons/icon-192-v2.png", "icons/icon-512-v2.png"];
@@ -13,7 +14,7 @@ self.addEventListener("install", e => {
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(
-    keys.filter(k => k.startsWith("gh-v") && k !== VERSION).map(k => caches.delete(k))
+    keys.filter(k => (k.startsWith("gh-v") && k !== VERSION) || (k.startsWith("gh-model") && k !== MODEL_CACHE)).map(k => caches.delete(k))
   )).then(() => self.clients.claim()));
 });
 
@@ -41,8 +42,8 @@ self.addEventListener("fetch", e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== "GET") return;
   if (url.pathname.includes("/api/") || url.hostname.endsWith("open-meteo.com")) return;
-  if (url.origin === location.origin && url.pathname.includes("/model/") && url.pathname.endsWith(".json")) { e.respondWith(networkFirst(req, "gh-model")); return; }
-  if (url.origin === location.origin && (url.pathname.includes("/model/") || url.pathname.includes("/vendor/ort/"))) { e.respondWith(cacheFirst(req, "gh-model")); return; }
+  if (url.origin === location.origin && url.pathname.includes("/model/") && url.pathname.endsWith(".json")) { e.respondWith(networkFirst(req, MODEL_CACHE)); return; }
+  if (url.origin === location.origin && (url.pathname.includes("/model/") || url.pathname.includes("/vendor/ort/"))) { e.respondWith(cacheFirst(req, MODEL_CACHE)); return; }
   if (url.hostname === "tile.openstreetmap.org") { e.respondWith(cacheFirst(req, "gh-tiles")); return; }
   if (url.hostname.endsWith("wikipedia.org") || url.hostname === "upload.wikimedia.org") { e.respondWith(cacheFirst(req, "gh-photos")); return; }
   if (url.origin === location.origin) {
