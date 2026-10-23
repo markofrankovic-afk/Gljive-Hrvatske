@@ -144,6 +144,8 @@ html.big body{font-size:19px}html.big{font-size:118%}
 .weekwarn{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r);padding:10px 12px;background:var(--bad-bg);border-left:4px solid var(--bad)}
 .weekwarn .ww-x{margin-left:auto;border:0;background:none;font-size:1.1rem;line-height:1;color:var(--muted)}
 .fieldbar{display:flex;gap:6px 14px;flex-wrap:wrap}
+.pl-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.pl-ic{font-size:1.3rem}.pl-tx{flex:1;min-width:0;display:flex;flex-direction:column}.pl-tx strong{overflow-wrap:anywhere}
+.pl-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pl-lab{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:700;color:var(--muted);margin-top:12px}.pl-lab input{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-weight:400}
 .sos-call{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sos-call a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;border-radius:var(--r);padding:14px 8px;font-weight:800;font-size:1.1rem;background:var(--dead-bg);color:var(--dead);text-align:center}
 .sos-call a span{font-size:.8rem;font-weight:500}
@@ -1887,9 +1889,13 @@ function navOpen(target,label){
   navDraw();
   if(!navigator.geolocation){$("#navBox").innerHTML='<p class="note danger">GPS nije dostupan na ovom uređaju.</p>';return}
   if(NAV.watch!=null)navigator.geolocation.clearWatch(NAV.watch);
-  NAV.watch=navigator.geolocation.watchPosition(p=>{NAV.pos={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};navDraw()},()=>{const b=$("#navBox");if(b)b.innerHTML='<p class="note danger">Lokacija nije dopuštena. Uključi lokaciju za ovu stranicu u postavkama preglednika.</p>'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+  NAV.watch=navigator.geolocation.watchPosition(p=>{NAV.pos={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};navDraw()},()=>{const b=$("#navBox");if(b)b.innerHTML='<p class="note danger">Lokacija nije dopuštena. Uključi lokaciju za ovu stranicu u postavkama preglednika.</p>'+LOC_HELP+''},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
   const start=()=>{window.addEventListener("deviceorientationabsolute",onHead);window.addEventListener("deviceorientation",onHead)};
-  if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){const b=$("#navCompass");b.hidden=false;b.onclick=()=>DeviceOrientationEvent.requestPermission().then(r=>{if(r==="granted"){start();b.hidden=true}}).catch(()=>{})}else start();
+  if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+    /* iPhone: dozvola za kompas traži se odmah, u istom dodiru kojim je otvorena navigacija; gumb ostaje samo kao rezerva */
+    const b=$("#navCompass");const ask=()=>DeviceOrientationEvent.requestPermission().then(r=>{if(r==="granted"){start();b.hidden=true}else b.hidden=false}).catch(()=>{b.hidden=false});
+    b.onclick=ask;ask();
+  }else start();
   if(window.gcEv)window.gcEv("navigacija");
 }
 function navStop(){if(NAV.watch!=null){navigator.geolocation.clearWatch(NAV.watch);NAV.watch=null}window.removeEventListener("deviceorientationabsolute",onHead);window.removeEventListener("deviceorientation",onHead)}
@@ -1901,10 +1907,54 @@ function carParked(){
    ()=>{if(b)b.textContent="Lokacija nije dopuštena";},{enableHighAccuracy:true,timeout:20000});
 }
 function renderCar(){const box=$("#carBar");if(!box)return;const c=store.get("gh-car",null);
-  if(c&&Date.now()-c.t<48*36e5){box.innerHTML='<button type="button" class="btn small" id="carGo">🚗 Vrati me do auta</button><span class="small">parkirano u '+new Date(c.t).toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit"})+'</span><button type="button" class="chip" id="carDel" style="padding:2px 10px">Obriši</button>';
+  const pl='<button type="button" class="btn ghost small" id="placesBtn">📍 Moja mjesta</button>';
+  if(c&&Date.now()-c.t<48*36e5){box.innerHTML='<button type="button" class="btn small" id="carGo">🚗 Vrati me do auta</button><span class="small">parkirano u '+new Date(c.t).toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit"})+'</span><button type="button" class="chip" id="carDel" style="padding:2px 10px">Obriši</button>'+pl;
     $("#carGo").onclick=()=>navOpen(c,"Povratak do auta");$("#carDel").onclick=()=>{store.set("gh-car",null);renderCar()}}
-  else box.innerHTML='<button type="button" class="btn ghost small" id="carBtn">🚗 Parkirao sam ovdje</button><span class="small">spremi auto prije ulaska u šumu</span>';
-  const cb=$("#carBtn");if(cb)cb.onclick=carParked;}
+  else box.innerHTML='<button type="button" class="btn ghost small" id="carBtn">🚗 Parkirao sam ovdje</button>'+pl+'<span class="small">spremi auto prije ulaska u šumu</span>';
+  const cb=$("#carBtn");if(cb)cb.onclick=carParked;$("#placesBtn").onclick=placesOpen;}
+/* ---------- Moja mjesta: stalna parkirališta i mjesta s gljivama (samo na ovom mobitelu) ---------- */
+const LOC_HELP='<p class="small">Na iPhoneu, da ne pita svaki put: <b>Postavke → Aplikacije → Safari → Lokacija → Dopusti</b> i <b>Postavke → Privatnost i sigurnost → Lokacijske usluge → Safari web-stranice → Dok se koristi</b>. Kompas iPhone traži potvrdu jednom kod svakog pokretanja aplikacije i to web-aplikacija ne može zaobići.</p>';
+const PL_T={auto:["🚗","Parkiralište"],gljive:["🍄","Mjesto s gljivama"]};
+let PL_POS=null;
+function plGet(){return store.get("gh-places",[])||[]}
+function plSet(a){store.set("gh-places",a)}
+function plDist(p){if(!PL_POS)return null;return hav(PL_POS,p)}
+function plFmt(d){return d==null?"":d<1000?Math.round(d)+" m":(d/1000).toFixed(1).replace(".",",")+" km"}
+function placesOpen(){
+  lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
+  placesRender();
+  if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{PL_POS={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};if($("#plList"))placesRender()},()=>{},{enableHighAccuracy:true,maximumAge:60000,timeout:20000});
+  if(window.gcEv)window.gcEv("moja-mjesta");
+}
+function placesRender(msg){
+  const all=plGet(),finds=(typeof log!=="undefined"?log:[]).filter(e=>e.lat);
+  const sorted=t=>all.filter(p=>p.type===t).sort((a,b)=>(plDist(a)??9e9)-(plDist(b)??9e9));
+  const row=(p,del)=>'<div class="pl-row"><span class="pl-ic" aria-hidden="true">'+PL_T[p.type][0]+'</span><div class="pl-tx"><strong>'+esc(p.name)+'</strong><span class="small">'+new Date(p.t).toLocaleDateString("hr-HR")+(PL_POS?' · '+plFmt(plDist(p))+' od tebe':'')+'</span></div><button type="button" class="btn small" data-plgo="'+p.id+'">Vodi me</button>'+(del?'<button type="button" class="chip" data-pldel="'+p.id+'" aria-label="Obriši '+esc(p.name)+'">×</button>':'')+'</div>';
+  const sec=(t,title,empty)=>{const L=sorted(t);return '<div class="d-sec"><span class="eyebrow">'+title+'</span>'+(L.length?L.map(p=>row(p,true)).join(""):'<p class="small">'+empty+'</p>')+'</div>'};
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Moja mjesta</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
+   '<div class="d-sec" style="border-top:0"><h2 id="dName">📍 Moja mjesta</h2><p class="small">Spremljena su samo na ovom mobitelu i nitko ih drugi ne vidi. Rade i bez signala.</p>'+
+   '<div id="plList"></div><label class="pl-lab">Naziv<input id="plName" type="text" maxlength="40" placeholder="npr. Parking kod Bajera / Bukve iznad potoka"></label>'+
+   '<div class="pl-add"><button type="button" class="btn small" data-pladd="auto">🚗 Spremi kao parkiralište</button><button type="button" class="btn small" data-pladd="gljive">🍄 Spremi mjesto s gljivama</button></div>'+
+   '<p class="small" id="plMsg">'+(msg||"Sprema mjesto na kojem trenutno stojiš.")+'</p></div>'+
+   sec("auto","🚗 Parkirališta","Još nema spremljenih parkirališta. Spremi mjesta gdje obično ostavljaš auto, pa te aplikacija vodi natrag i kad zaboraviš stisnuti „Parkirao sam ovdje”.")+
+   sec("gljive","🍄 Mjesta s gljivama","Još nema spremljenih mjesta.")+
+   (finds.length?'<div class="d-sec"><span class="eyebrow">📓 Nalazi iz dnevnika s lokacijom</span>'+finds.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30).map(e=>{const sp=byId[e.sp];return '<div class="pl-row"><span class="pl-ic" aria-hidden="true">📓</span><div class="pl-tx"><strong>'+esc(sp?sp.hr:"Neodređena gljiva")+'</strong><span class="small">'+esc(e.date.split("-").reverse().join("."))+(e.place?' · '+esc(e.place):'')+(PL_POS?' · '+plFmt(hav(PL_POS,e))+' od tebe':'')+'</span></div><button type="button" class="btn small" data-plfind="'+e.id+'">Vodi me</button></div>'}).join("")+'</div>':'')+
+   '<div class="d-sec"><details><summary class="small">iPhone stalno traži dozvolu za lokaciju?</summary>'+LOC_HELP+'</details></div>';
+}
+$("#sheet").addEventListener("click",e=>{
+  const go=e.target.closest("[data-plgo]"),del=e.target.closest("[data-pldel]"),add=e.target.closest("[data-pladd]"),fd=e.target.closest("[data-plfind]");
+  if(go){const p=plGet().find(x=>x.id===go.dataset.plgo);if(p)navOpen(p,(p.type==="auto"?"Povratak do: ":"Do mjesta: ")+p.name);return}
+  if(fd){const en=log.find(x=>x.id===fd.dataset.plfind);if(en)navOpen({lat:en.lat,lon:en.lon},"Do mjesta nalaza");return}
+  if(del){const p=plGet().find(x=>x.id===del.dataset.pldel);if(p&&confirm("Obrisati „"+p.name+"”?")){plSet(plGet().filter(x=>x.id!==p.id));placesRender()}return}
+  if(add){const type=add.dataset.pladd,nm=($("#plName").value||"").trim();
+    if(!navigator.geolocation){placesRender("GPS nije dostupan na ovom uređaju.");return}
+    $("#plMsg").textContent="Tražim točnu lokaciju…";
+    navigator.geolocation.getCurrentPosition(p=>{const a=plGet();const n=a.filter(x=>x.type===type).length+1;
+      a.push({id:Date.now().toString(36),type,name:nm||(type==="auto"?"Parkiralište "+n:"Mjesto "+n),lat:p.coords.latitude,lon:p.coords.longitude,acc:Math.round(p.coords.accuracy),t:Date.now()});
+      plSet(a);PL_POS={lat:p.coords.latitude,lon:p.coords.longitude};placesRender("✓ Spremljeno (točnost ±"+Math.round(p.coords.accuracy)+" m).");if(window.gcEv)window.gcEv("mjesto-spremljeno-"+type)},
+      ()=>{placesRender("Lokacija nije dopuštena.");$("#plMsg").insertAdjacentHTML("afterend",LOC_HELP)},{enableHighAccuracy:true,maximumAge:0,timeout:25000});
+  }
+});
 renderCar();
 $("#logList").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;const en=log.find(x=>x.id===b.dataset.nav);if(en&&en.lat)navOpen({lat:en.lat,lon:en.lon},"Do mjesta nalaza: "+((byId[en.sp]||{}).hr||"nalaz"))});
 
@@ -1948,7 +1998,7 @@ function whatsNew(force){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.2.5";
+const APP_VERSION="v2.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2124,11 +2174,11 @@ function nearestRegion(lat,lon){let best=null,bd=1e9;for(const[k,[a,b]]of Object
 
 /* ---------- 4. Sigurnosna kopija dnevnika ---------- */
 function exportLog(){
-  const blob=new Blob([JSON.stringify({app:"gljive-hrvatske",v:1,izvezeno:new Date().toISOString(),log},null,1)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"gljive-hrvatske",v:1,izvezeno:new Date().toISOString(),log,mjesta:store.get("gh-places",[])||[]},null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="dnevnik-gljive-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 }
 function importLog(file){
-  const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result);const add=(d.log||[]).filter(e=>e&&e.id&&!log.some(x=>x.id===e.id));log=log.concat(add);store.set("gh-log",log);renderLog();$("#bkMsg").textContent="Uvezeno zapisa: "+add.length}catch(e){$("#bkMsg").textContent="Datoteka nije ispravna sigurnosna kopija."}};fr.readAsText(file);
+  const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result);const add=(d.log||[]).filter(e=>e&&e.id&&!log.some(x=>x.id===e.id));log=log.concat(add);store.set("gh-log",log);renderLog();const pl=store.get("gh-places",[])||[];const ap=(d.mjesta||[]).filter(x=>x&&x.id&&x.lat&&!pl.some(y=>y.id===x.id));store.set("gh-places",pl.concat(ap));$("#bkMsg").textContent="Uvezeno zapisa: "+add.length+(ap.length?", mjesta: "+ap.length:"")}catch(e){$("#bkMsg").textContent="Datoteka nije ispravna sigurnosna kopija."}};fr.readAsText(file);
 }
 
 /* ---------- 5. Instalacija i rad bez interneta ---------- */
