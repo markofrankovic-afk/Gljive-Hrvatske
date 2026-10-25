@@ -343,7 +343,7 @@ form.log .full{grid-column:1/-1}
       <div class="list" id="keyList"></div>
     </div>
 
-    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model prepoznaje 581 vrstu iz atlasa. Preuzme se jednom (oko 34 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model prepoznaje 601 vrstu iz atlasa. Preuzme se jednom (oko 34 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="panel" id="aiPanel" hidden>
       <h2>3. Analiza slike</h2>
       <div id="aiUnavailable" class="note" hidden>Analiza slike trenutno nije dostupna.</div>
@@ -2045,7 +2045,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.6.1";
+const APP_VERSION="v2.7";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2327,7 +2327,7 @@ document.addEventListener("click",e=>{
 
 const LMCFG={base:"model/",ortScript:"vendor/ort/ort.wasm.min.js",mjsBase:"vendor/ort/",wasm:"vendor/ort/ort-wasm-simd-threaded.wasm",server:true};
 /* ================= Prepoznavanje na uređaju (besplatno, radi bez interneta) =================
-   Model: vlastiti model Gljiva Hrvatske (EfficientNet-B2, 581 vrsta iz atlasa), učen na fotografijama
+   Model: vlastiti model Gljiva Hrvatske (EfficientNet-B2, 601 vrsta iz atlasa), učen na fotografijama
    zajednice iNaturalist pod licencama CC0 i CC BY; bilježnica za treniranje: trening/GljiveHrvatske_model.ipynb.
    Datoteke: model/model.onnx, model/labels.json (indeks -> latinski naziv), model/meta.json (ulaz i normalizacija). */
 
@@ -2640,7 +2640,7 @@ function renderLocal(){
   if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+' % vjerojatnosti otpada na vrste kojih nema u atlasu.</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+(best?'<button class="btn ghost small" id="lmLog" data-sp="'+best.s.id+'">Zapiši u dnevnik</button>':'')+'</div>';
-  h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 147.000 fotografija zajednice iNaturalist za 581 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
+  h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 148.000 fotografija zajednice iNaturalist za 601 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
   $("#lmOut").innerHTML=h;
 }
 async function runLocal(){
