@@ -102,6 +102,8 @@ nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--surfac
 .search{display:flex;gap:8px}
 .search input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
+.frec{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin:8px 0}.frec summary{cursor:pointer;line-height:1.35}.frec h5{margin:10px 0 4px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.frec ul,.frec ol{margin:0;padding-left:1.3em}.frec li{margin:3px 0}
+#recCats .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.88rem;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .row-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
@@ -493,6 +495,7 @@ form.log .full{grid-column:1/-1}
   <section class="view" id="v-recipes" hidden>
     <h2>Recepti i priprema</h2>
     <p class="small">Samo za vrste koje je potvrdio determinator. Gljive uvijek dobro termički obradi i jedi isti ili sljedeći dan.</p>
+    <div class="row-scroll" id="recCats" role="group" aria-label="Vrsta jela" style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px"></div>
     <div class="list" id="recList" style="grid-template-columns:1fr"></div>
   </section>
 
@@ -1158,6 +1161,267 @@ const REC_EXT={
 };
 for(const s of S)if(REC_EXT[s.id]&&!(s.rec&&s.rec.length))s.rec=REC_EXT[s.id];
 
+/* Puni recepti za 20 najčešće branih jestivih vrsta: sastojci, koraci, čišćenje, čuvanje i sigurnosne napomene.
+   k = vrsta jela: juha | umak (umaci i tjestenina) | glavno | predjelo (predjela i prilozi) | zimnica */
+const REC_FULL={
+"vrganj":{
+ cis:"Četkicom ili vlažnom krpom očisti zemlju, ne peri pod mlazom vode. Odreži donji dio stručka. Kod starijih vrganja makni spužvaste žutozelene cjevčice jer upijaju vodu i brzo se kvare. Prereži svaki primjerak uzduž i provjeri ima li crvića.",
+ cuv:"Svježe drži u papirnatoj vrećici u hladnjaku do 2 dana. Suši na ploškama od 5 mm na 40–50 °C dok ne postanu krhke, pa čuvaj u staklenkama. Za zamrzavanje nareži na ploške, ne blanširaj, i zamrzni raširene na pladnju pa prebaci u vrećice; ne odmrzavaj prije prženja.",
+ r:[
+  {n:"Juha od vrganja",k:"juha",p:4,v:40,s:["400 g svježih vrganja (ili 40 g suhih)","1 luk","1 mrkva","2 krumpira","2 žlice maslaca","1 l temeljca od povrća","1 dl vrhnja za kuhanje","peršin, sol, papar"],
+   c:["Luk i mrkvu sitno nasjeckaj i pirjaj na maslacu 5 minuta.","Dodaj vrganje na ploške i pirjaj dok ne ispari voda koju puste.","Dodaj krumpir na kockice i temeljac, kuhaj 20 minuta.","Umiješaj vrhnje, posoli, popapri i kuhaj još 2 minute.","Pospi sjeckanim peršinom."],
+   sav:"Suhe vrganje namoči 20 minuta u mlakoj vodi, a vodu od namakanja procijedi kroz papirnati ručnik i dodaj u juhu."},
+  {n:"Rižoto s vrganjima",k:"glavno",p:4,v:35,s:["300 g vrganja","320 g riže za rižoto (arborio)","1 luk","1 dl suhog bijelog vina","1 l vrućeg temeljca","3 žlice maslaca","50 g ribanog parmezana","sol, papar, peršin"],
+   c:["Luk sitno nasjeckaj i pirjaj na 2 žlice maslaca dok ne omekša.","Dodaj vrganje na kockice i prži 5 minuta.","Umiješaj rižu i prži minutu da postane staklasta.","Podlij vinom i miješaj dok ne ispari.","Dolijevaj vrući temeljac kutlaču po kutlaču, uz miješanje, oko 18 minuta.","Makni s vatre, umiješaj ostatak maslaca i parmezan, poklopi na 2 minute."],
+   sav:"Rižoto treba biti kremast i tekuć; ako se zgusne, dodaj još malo temeljca."},
+  {n:"Vrganji s pršutom",k:"predjelo",p:2,v:15,s:["300 g mladih vrganja","50 g pršuta","2 režnja češnjaka","2 žlice maslinova ulja","peršin, papar"],
+   c:["Vrganje nareži na ploške od 1 cm.","Na ulju prži pršut na trakice minutu da zamiriše.","Dodaj vrganje i prži na jačoj vatri 4–5 minuta, okreni jednom.","Dodaj sjeckani češnjak i peršin, prži još minutu.","Ne soli dok ne probaš, pršut je slan."],
+   sav:"Uz domaći kruh ili palentu ovo je cijeli obrok."},
+  {n:"Vrganji u ulju",k:"zimnica",p:4,v:30,s:["1 kg malih, čvrstih vrganja","5 dl bijelog vinskog octa","5 dl vode","1 žlica soli","lovorov list, papar u zrnu, češnjak","maslinovo ulje za prelijevanje"],
+   c:["Vrganje očisti i veće prepolovi.","Ocat, vodu i sol zakuhaj, ubaci vrganje i kuhaj 5 minuta.","Ocijedi i ostavi da se osuše na čistoj krpi preko noći.","Slaži u sterilizirane staklenke s lovorom, paprom i češnjakom.","Prelij uljem tako da potpuno prekrije gljive, zatvori i čuvaj na hladnom."],
+   sav:"Gljive moraju biti potpuno prekrivene uljem. Otvorenu staklenku drži u hladnjaku i potroši za 2 tjedna."}
+ ]},
+"ljetni-vrganj":{
+ cis:"Kao vrganj: suho čišćenje četkicom, odreži dno stručka, prereži i provjeri crviće. Ljetni vrganji su češće crvljivi jer rastu po toplom vremenu, pa beri mlade.",
+ cuv:"Najbolji su za sušenje: ploške od 5 mm suši na 40–50 °C. Mogu se zamrznuti sirovi, narezani.",
+ r:[
+  {n:"Tagliatelle s vrganjima",k:"umak",p:4,v:25,s:["400 g ljetnih vrganja","400 g tagliatella","2 režnja češnjaka","3 žlice maslinova ulja","2 dl vrhnja za kuhanje","50 g parmezana","peršin, sol, papar"],
+   c:["Tjesteninu skuhaj u posoljenoj vodi; sačuvaj šalicu vode od kuhanja.","Vrganje na ploške prži na ulju 6 minuta na jačoj vatri.","Dodaj češnjak, pa nakon pola minute vrhnje.","Kuhaj 3 minute, posoli i popapri.","Ubaci tjesteninu, malo vode od kuhanja i parmezan, promiješaj.","Pospi peršinom."],
+   sav:"Bez vrhnja: umjesto njega koristi više vode od kuhanja tjestenine i komadić maslaca."},
+  {n:"Palenta s gljivama",k:"glavno",p:4,v:35,s:["500 g ljetnih vrganja ili miješanih gljiva","250 g palente (kukuruzne krupice)","1 l vode","1 luk","2 žlice maslaca","1 dl bijelog vina","sol, papar, majčina dušica"],
+   c:["Vodu posoli, zakuhaj i postupno umiješaj palentu; kuhaj uz miješanje prema uputi (obično 10–40 minuta).","Za to vrijeme na maslacu pirjaj luk, dodaj gljive i prži 8 minuta.","Podlij vinom, dodaj majčinu dušicu i kuhaj dok vino ne ispari.","Posoli i popapri.","Palentu stavi na tanjur, a gljive preko nje."],
+   sav:"Gorska varijanta: preko palente nariban sir škripavac ili kiselo vrhnje."}
+ ]},
+"crni-vrganj":{
+ cis:"Suho čišćenje četkicom. Crni vrganj je čvrst i rijetko crvljiv, pa je izvrstan za jela gdje gljiva treba ostati u komadu.",
+ cuv:"Suši se i zamrzava kao vrganj. Zbog čvrstog mesa najbolji je za ulje i ocat.",
+ r:[
+  {n:"Pečeni s krumpirom",k:"glavno",p:4,v:50,s:["500 g crnih vrganja","800 g krumpira","1 luk","3 režnja češnjaka","4 žlice maslinova ulja","ružmarin, sol, papar"],
+   c:["Pećnicu ugrij na 200 °C.","Krumpir nareži na kriške, pomiješaj s uljem, solju i ružmarinom i peci 25 minuta.","Dodaj luk na kolutove i vrganje na deblje ploške, promiješaj.","Peci još 15–20 minuta dok gljive ne porumene.","Pred kraj dodaj sjeckani češnjak."],
+   sav:"Isto se može ispod peke: gljive dodaj u zadnjih 20 minuta da se ne raspadnu."},
+  {n:"Vrganji na žaru",k:"predjelo",p:2,v:15,s:["4 veća klobuka crnog vrganja","3 žlice maslinova ulja","2 režnja češnjaka","peršin, krupna sol, papar"],
+   c:["Klobuke nareži na ploške od 1–1,5 cm.","Ulje pomiješaj sa sjeckanim češnjakom i peršinom.","Ploške premaži uljem i peci na vrućem roštilju ili gril tavi 3–4 minute sa svake strane.","Posoli krupnom solju i prelij ostatkom ulja."],
+   sav:"Peci na jakoj vatri i ne okreći prečesto, inače puste vodu i kuhaju se umjesto da se peku."}
+ ]},
+"lisicarka":{
+ cis:"Lisičarke su rijetko crvljive. Pijesak i iglice očisti četkicom; ako su jako prljave, kratko ih isperi i odmah dobro osuši na krpi. Veće natrgaj po dužini.",
+ cuv:"Ne suši ih, postanu žilave. Za zamrzavanje ih prvo bez masnoće popirjaj u suhoj tavi dok ne puste i ne upiju vodu, ohladi i zamrzni; sirove zamrznute postanu gorke.",
+ r:[
+  {n:"Kajgana s lisičarkama",k:"glavno",p:2,v:15,s:["250 g lisičarki","4 jaja","1 mladi luk ili pola luka","1 žlica maslaca","vlasac ili peršin, sol, papar"],
+   c:["Lisičarke stavi u suhu tavu na srednju vatru dok ne puste vodu i ona ne ispari.","Dodaj maslac i luk, prži 3 minute.","Jaja razmuti sa solju i paprom i izlij u tavu.","Miješaj lagano dok se ne zgusnu, ali ostanu sočna.","Pospi vlascem."],
+   sav:"Suho pirjanje na početku je ključ za lisičarke: ne postanu gumene i bolje zamirišu."},
+  {n:"Lisičarke u umaku od vrhnja",k:"umak",p:4,v:25,s:["500 g lisičarki","1 luk","2 žlice maslaca","2 dl vrhnja za kuhanje","1 dl bijelog vina","peršin, sol, papar"],
+   c:["Lisičarke suho popirjaj dok voda ne ispari.","Dodaj maslac i sitno sjeckani luk, prži 5 minuta.","Podlij vinom i kuhaj dok ne ispari.","Dodaj vrhnje, kuhaj 5 minuta da se umak zgusne.","Posoli, popapri i pospi peršinom."],
+   sav:"Uz njoke, knedle, tjesteninu ili pečenu piletinu."},
+  {n:"Ukiseljene lisičarke",k:"zimnica",p:4,v:30,s:["1 kg malih lisičarki","4 dl vinskog octa","6 dl vode","1 žlica soli","1 žlica šećera","lovor, papar u zrnu, sjemenke gorušice, mali luk"],
+   c:["Lisičarke kuhaj u slanoj vodi 10 minuta i ocijedi.","Ocat, vodu, sol i šećer zakuhaj.","Lisičarke slaži u sterilizirane staklenke s lovorom, paprom, gorušicom i kolutovima luka.","Prelij vrućim octom do vrha i zatvori.","Okreni staklenke naopako dok se ne ohlade."],
+   sav:"Spremne su za jelo nakon 2 tjedna."}
+ ]},
+"suncanica":{
+ sig:"Beri samo velike sunčanice s klobukom većim od 10 cm i pomičnim dvostrukim prstenom; male sunčanice (štitarke) mogu biti smrtno otrovne. Stručak se ne jede jer je drvenast. Nikad ih ne jedi sirove.",
+ cis:"Odvrni stručak i baci ga. Klobuk otresi i obriši; ljuske s gornje strane ne treba skidati. Koriste se mladi, tek otvoreni klobuci i potpuno raširene ploče.",
+ cuv:"Ne suše se dobro i ne zamrzavaju sirove. Najbolje ih je pripremiti isti dan; pohane se mogu zamrznuti nakon prženja.",
+ r:[
+  {n:"Pohane sunčanice",k:"glavno",p:4,v:25,s:["4–6 raširenih klobuka sunčanice","2 jaja","100 g brašna","150 g krušnih mrvica","ulje za prženje","sol, papar, kriške limuna"],
+   c:["Klobuke ostavi cijele ili ih prepolovi; posoli i popapri.","Uvaljaj ih redom u brašno, razmućena jaja i krušne mrvice.","Prži u vrućem ulju 2–3 minute sa svake strane dok ne porumene.","Ocijedi na papirnatom ručniku.","Posluži s limunom, salatom ili tartar umakom."],
+   sav:"Ne stavljaj previše ulja u tavu odjednom, klobuci su veliki pa ih prži jedan ili dva odjednom."},
+  {n:"Sunčanice na žaru s češnjakom",k:"predjelo",p:2,v:15,s:["4 klobuka sunčanice","3 žlice maslinova ulja","3 režnja češnjaka","peršin, krupna sol"],
+   c:["Ulje pomiješaj s ribanim češnjakom i peršinom.","Klobuke premaži s obje strane.","Peci na vrućem roštilju 3 minute s donje (listići), pa 2 minute s gornje strane.","Posoli i pokapaj ostatkom ulja."],
+   sav:"Klobuk peci najprije listićima prema vatri, tako ostane sočan."}
+ ]},
+"rujnica":{
+ cis:"Klobuke obriši i odreži donji dio stručka. Zelenkaste mrlje na rujnici su normalne. Prereži stručak jer su često crvljivi.",
+ cuv:"Najbolje se kisele i peku. Sušene nisu dobre. Mogu se zamrznuti nakon kratkog prženja.",
+ sig:"Nakon jela rujnica mokraća može postati narančasto-crvena. To je bezopasno i prolazi samo od sebe.",
+ r:[
+  {n:"Rujnice na žaru",k:"glavno",p:2,v:20,s:["8–10 klobuka rujnice","3 žlice ulja","2 režnja češnjaka","peršin, sol, papar"],
+   c:["Klobuke ostavi cijele, stručak odreži.","Premaži uljem s češnjakom i posoli.","Peci listićima prema dolje 4 minute, okreni i peci još 3 minute.","Pospi peršinom."],
+   sav:"Tradicionalno se peku na žaru ili ispod peke, uz meso."},
+  {n:"Ukiseljene rujnice",k:"zimnica",p:4,v:30,s:["1 kg malih rujnica","4 dl vinskog octa","6 dl vode","1 žlica soli","lovor, papar u zrnu, češnjak, kopar"],
+   c:["Rujnice kuhaj u slanoj vodi 10 minuta i ocijedi.","Ocat, vodu i sol zakuhaj.","Slaži u sterilizirane staklenke sa začinima.","Prelij vrućim octom, zatvori i okreni naopako dok se ne ohladi."],
+   sav:"Uz hladno meso i sir; spremne za 2 tjedna."}
+ ]},
+"bukovaca":{
+ cis:"Bukovače su čiste; odreži tvrdi dio pri bazi gdje su srasle i provjeri ima li kukaca između listića. Ne peri ih.",
+ cuv:"Svježe drži u hladnjaku 2–3 dana. Zamrzavaju se nakon kratkog prženja; sušene postanu žilave.",
+ r:[
+  {n:"Pohane bukovače",k:"glavno",p:4,v:25,s:["600 g bukovača","2 jaja","100 g brašna","150 g krušnih mrvica","ulje za prženje","sol, papar"],
+   c:["Veće bukovače razdvoji, posoli i popapri.","Uvaljaj u brašno, jaja i mrvice.","Prži u vrućem ulju 2–3 minute sa svake strane.","Ocijedi na papirnatom ručniku."],
+   sav:"Prije pohanja ih možeš 3 minute prokuhati u slanoj vodi i osušiti; ostanu mekše."},
+  {n:"Gulaš od bukovača",k:"glavno",p:4,v:40,s:["800 g bukovača","2 luka","2 žlice ulja","1 žlica slatke mljevene paprike","1 žlica koncentrata rajčice","5 dl temeljca","lovor, majčina dušica, sol, papar","1 žlica brašna"],
+   c:["Luk sitno nasjeckaj i pirjaj na ulju 8 minuta.","Dodaj bukovače na trake i pirjaj 10 minuta.","Makni s vatre, umiješaj papriku i koncentrat.","Dodaj temeljac, lovor i majčinu dušicu, kuhaj 15 minuta.","Brašno razmuti u malo vode, umiješaj i kuhaj još 3 minute."],
+   sav:"Uz palentu, pire krumpir ili žlice (žličnjake)."},
+  {n:"Bukovače s tave",k:"predjelo",p:2,v:10,s:["400 g bukovača","2 žlice maslinova ulja","2 režnja češnjaka","peršin, sol, papar"],
+   c:["Bukovače natrgaj na trake.","Prži na vrućem ulju 5–6 minuta da porumene.","Dodaj češnjak i peršin, prži minutu, posoli."],
+   sav:"Ne miješaj ih prečesto da dobiju zlatnu koricu."}
+ ]},
+"mednjaca":{
+ sig:"Medena puza se nikad ne jede sirova ni nedovoljno kuhana. Uvijek je prokuhaj 10 minuta, a vodu baci. Jedi samo klobuke mladih primjeraka; stručci su žilavi. Neki je ljudi ne podnose ni dobro kuhanu, pa prvi put pojedi malo.",
+ cis:"Odreži stručke odmah pri klobuku. Klobuke otresi; ne treba ih ljuštiti.",
+ cuv:"Zamrzavaju se nakon prokuhavanja. Mogu se kiseliti nakon prokuhavanja.",
+ r:[
+  {n:"Gulaš od mednjača",k:"glavno",p:4,v:50,s:["800 g klobuka mednjače","2 luka","2 žlice ulja","1 žlica slatke paprike","2 krumpira","7 dl vode ili temeljca","lovor, sol, papar, kiselo vrhnje"],
+   c:["Mednjače kuhaj u kipućoj vodi 10 minuta, ocijedi i vodu baci.","Luk pirjaj na ulju 8 minuta.","Dodaj mednjače i pirjaj 10 minuta.","Umiješaj papriku, dodaj krumpir na kockice, lovor i vodu.","Kuhaj 20 minuta dok krumpir ne omekša; posoli i popapri.","Posluži sa žlicom kiselog vrhnja."],
+   sav:"Prvo kuhanje i bacanje vode nije preporuka nego obavezan korak."},
+  {n:"Ukiseljene mednjače",k:"zimnica",p:4,v:40,s:["1 kg klobuka mednjače","4 dl vinskog octa","6 dl vode","1 žlica soli","lovor, papar u zrnu, luk"],
+   c:["Mednjače kuhaj 10 minuta u vodi i vodu baci.","Kuhaj ih još 10 minuta u novoj slanoj vodi i ocijedi.","Ocat, vodu i sol zakuhaj.","Slaži u sterilizirane staklenke s lukom i začinima, prelij vrućim octom i zatvori."],
+   sav:"Spremne nakon 2 tjedna."}
+ ]},
+"smrcak":{
+ sig:"Smrčci se nikad ne jedu sirovi ni nedovoljno kuhani: uvijek ih kuhaj ili prži najmanje 15 minuta. Pazi na zamjenu s hrčkom (Gyromitra), koji je otrovan: prerezan smrčak je iznutra potpuno šupalj.",
+ cis:"Prereži svaki smrčak uzduž, provjeri da je šupalj i istresi pijesak i kukce. Kratko ih isperi i dobro osuši.",
+ cuv:"Odlično se suše na zraku ili na 40 °C. Sušene prije pripreme namoči 30 minuta, a vodu procijedi i koristi.",
+ r:[
+  {n:"Smrčci u umaku od vrhnja",k:"umak",p:4,v:30,s:["300 g svježih smrčaka (ili 30 g suhih)","1 ljutika ili mali luk","2 žlice maslaca","1 dl bijelog vina","2 dl vrhnja za kuhanje","sol, papar"],
+   c:["Ljutiku pirjaj na maslacu 3 minute.","Dodaj prepolovljene smrčke i prži 10 minuta.","Podlij vinom i kuhaj dok ne ispari.","Dodaj vrhnje i kuhaj još 5 minuta.","Posoli i popapri."],
+   sav:"Uz teletinu, piletinu ili tjesteninu."},
+  {n:"Punjeni smrčci",k:"predjelo",p:4,v:40,s:["12 velikih smrčaka","150 g mljevenog mesa ili svježeg sira","1 jaje","2 žlice krušnih mrvica","peršin, sol, papar","2 žlice maslaca","1 dl temeljca"],
+   c:["Pećnicu ugrij na 180 °C.","Mljeveno meso (ili sir) pomiješaj s jajem, mrvicama, peršinom, solju i paprom.","Nadjev žličicom ili vrećicom utisni u smrčke.","Složi ih u posudu, dodaj maslac i temeljac.","Peci 25 minuta, povremeno ih zalij sokom."],
+   sav:"S mesom peci barem 25 minuta, da se i meso i smrčci potpuno ispeku."}
+ ]},
+"kostanjevka":{
+ cis:"Kao vrganj: suho čišćenje, odreži dno stručka. Cjevčice na pritisak pomodre, to je normalno i nestaje kuhanjem.",
+ cuv:"Suši se i zamrzava kao vrganj. Kod sušenja beri mlade, čvrste primjerke.",
+ r:[
+  {n:"Kostanjevke s krumpirom",k:"glavno",p:4,v:40,s:["500 g kostanjevki","800 g krumpira","1 luk","3 žlice ulja","1 žlica slatke paprike","sol, papar, peršin"],
+   c:["Krumpir ogulji i nareži na kockice; skuhaj u slanoj vodi 10 minuta i ocijedi.","Luk pirjaj na ulju 5 minuta.","Dodaj kostanjevke na ploške i prži 8 minuta.","Dodaj krumpir i papriku, prži još 10 minuta da krumpir dobije koricu.","Posoli, popapri i pospi peršinom."],
+   sav:"Jednostavan šumski ručak; uz kiselo mlijeko ili salatu."},
+  {n:"Juha od šumskih gljiva",k:"juha",p:4,v:40,s:["400 g kostanjevki i drugih šumskih gljiva","1 luk","1 mrkva","1 korijen peršina","2 žlice ulja","1 žlica brašna","1 l temeljca","1 dl kiselog vrhnja","sol, papar, kumin"],
+   c:["Luk, mrkvu i peršin nasjeckaj i pirjaj na ulju 5 minuta.","Dodaj gljive na kockice i pirjaj 10 minuta.","Pospi brašnom, promiješaj i dolij temeljac.","Dodaj prstohvat kumina i kuhaj 20 minuta.","Kiselo vrhnje razmuti s malo juhe pa umiješaj u lonac."],
+   sav:"Pred kraj možeš dodati žličicu octa za kiselkasti, starinski okus."}
+ ]},
+"krasnica-zelena":{
+ cis:"Klobuke obriši i odreži stručak. Krasnice su krhke, pa ih nosi u košari na vrhu.",
+ cuv:"Najbolje svježe. Zamrzavaju se nakon prženja; ne suše se dobro.",
+ r:[
+  {n:"Zelenke na žaru",k:"predjelo",p:2,v:15,s:["6–8 klobuka zelenke","2 žlice ulja","sol, papar","malo maslaca"],
+   c:["Klobuke posoli i premaži uljem.","Peci listićima prema gore na roštilju ili tavi 5 minuta.","U svaki klobuk stavi komadić maslaca i peci još 2 minute."],
+   sav:"Starinski način: klobuk ispeći na užarenom kamenu ili žeravici uz malo soli."},
+  {n:"Zelenke s jajima",k:"glavno",p:2,v:15,s:["300 g zelenki","4 jaja","1 luk","1 žlica maslaca","sol, papar, vlasac"],
+   c:["Luk pirjaj na maslacu 3 minute.","Dodaj zelenke na ploške i prži 6 minuta.","Dodaj razmućena jaja i miješaj dok se ne zgusnu.","Posoli, popapri i pospi vlascem."],
+   sav:"Okus je blag i orašast, pa ne pretjeruj sa začinima."}
+ ]},
+"siva-krasnica":{
+ cis:"Klobuke obriši, odreži stručak i provjeri crviće. Sivka je krhka, nosi je odvojeno od težih gljiva.",
+ cuv:"Najbolja svježa ili ukiseljena; zamrzava se nakon prženja.",
+ r:[
+  {n:"Sivke na maslacu",k:"predjelo",p:2,v:15,s:["400 g sivki","2 žlice maslaca","1 režanj češnjaka","peršin, sol, papar"],
+   c:["Sivke nareži na ploške.","Prži na maslacu 6–8 minuta da porumene.","Dodaj češnjak i peršin, prži minutu, posoli i popapri."],
+   sav:"Uz kruh i čašu mlijeka ili kao prilog mesu."},
+  {n:"Sivke u tijestu (popečci)",k:"glavno",p:4,v:30,s:["400 g sivki","2 jaja","100 g brašna","1 dl mlijeka","1 luk","ulje za prženje","sol, papar, peršin"],
+   c:["Sivke sitno nasjeckaj i s lukom popirjaj 8 minuta, ohladi.","Jaja, brašno i mlijeko izmiješaj u gusto tijesto.","Umiješaj gljive, peršin, sol i papar.","Žlicom stavljaj tijesto u vruće ulje i prži popečke 2–3 minute sa svake strane."],
+   sav:"Mogu se raditi i s miješanim krasnicama koje je potvrdio determinator."}
+ ]},
+"djurdjevaca":{
+ sig:"Đurđevača raste u proljeće, u isto vrijeme kad i smrtno otrovna crvenkasta cjepača (Inosperma erubescens), koja je mlada također bijela. Đurđevača jako miriše na brašno i meso joj ne crveni; ako nisi siguran, ne beri.",
+ cis:"Odreži zemljani dio stručka i obriši klobuke. Uglavnom su čiste.",
+ cuv:"Zamrzava se nakon kratkog prženja. Može se kiseliti.",
+ r:[
+  {n:"Juha od đurđevača",k:"juha",p:4,v:35,s:["400 g đurđevača","1 luk","2 krumpira","2 žlice maslaca","1 l temeljca","1 dl vrhnja","vlasac, sol, papar"],
+   c:["Luk pirjaj na maslacu 5 minuta.","Dodaj đurđevače na ploške i pirjaj 10 minuta.","Dodaj krumpir i temeljac, kuhaj 20 minuta.","Dio juhe izmiksaj štapnim mikserom da se zgusne.","Umiješaj vrhnje, posoli i pospi vlascem."],
+   sav:"Proljetna juha; miris brašna nestaje kuhanjem i ostaje blag okus."},
+  {n:"Kajgana s đurđevačama",k:"glavno",p:2,v:15,s:["250 g đurđevača","4 jaja","1 mladi luk","1 žlica maslaca","sol, papar"],
+   c:["Đurđevače na ploške prži na maslacu s mladim lukom 8 minuta.","Dodaj razmućena jaja i miješaj dok se ne zgusnu.","Posoli i popapri."],
+   sav:"Uz mladi luk i šparoge ovo je pravo proljetno jelo."}
+ ]},
+"trubaca":{
+ cis:"Trubače su šuplje: rasijeci ih uzduž i istresi lišće i kukce. Kratko isperi ako treba i dobro osuši.",
+ cuv:"Najbolje za sušenje: suše se brzo i dugo traju. Samljevene u prah su izvrstan začin.",
+ r:[
+  {n:"Prah od trubača",k:"zimnica",p:4,v:20,s:["500 g svježih trubača (daje oko 50 g praha)"],
+   c:["Trubače očisti i osuši na 45 °C dok ne postanu potpuno krhke.","Samelji ih u mlincu za kavu ili blenderu.","Prosij i čuvaj u zatvorenoj staklenci na tamnom mjestu."],
+   sav:"Žličica praha u umaku, rižotu, juhi ili na pečenom mesu daje jak okus šume."},
+  {n:"Tjestenina s trubačama",k:"umak",p:4,v:25,s:["300 g svježih trubača (ili 30 g suhih)","400 g tjestenine","2 režnja češnjaka","3 žlice maslinova ulja","1 dl bijelog vina","parmezan, peršin, sol, papar"],
+   c:["Tjesteninu skuhaj; sačuvaj šalicu vode od kuhanja.","Trubače prži na ulju 6 minuta.","Dodaj češnjak, pa vino i kuhaj dok ne ispari.","Dodaj tjesteninu, malo vode od kuhanja i parmezan, promiješaj."],
+   sav:"Crna boja trubača je normalna; jelo izgleda tamno, a okus je bogat."}
+ ]},
+"brezov-djed":{
+ sig:"Hrapavce uvijek dobro termički obradi, najmanje 15–20 minuta. Nedovoljno kuhani kod nekih ljudi izazivaju probavne smetnje.",
+ cis:"Stručci starijih hrapavaca su žilavi: koristi samo klobuke, a stručke mladih. Meso pri rezanju i kuhanju potamni; to je normalno.",
+ cuv:"Dobro se suše (meso potamni). Zamrzavaju se nakon prženja.",
+ r:[
+  {n:"Prženi hrapavci s lukom",k:"glavno",p:4,v:30,s:["600 g hrapavaca","2 luka","3 žlice ulja","1 dl vrhnja (po želji)","sol, papar, kopar"],
+   c:["Luk na kolutove pirjaj na ulju 8 minuta.","Dodaj hrapavce na ploške i prži 15–20 minuta dok ne porumene.","Posoli i popapri.","Po želji dodaj vrhnje i kopar i kuhaj još 3 minute."],
+   sav:"Uz kuhani krumpir s maslacem i koprom."},
+  {n:"Juha od hrapavaca",k:"juha",p:4,v:45,s:["400 g hrapavaca","1 luk","1 mrkva","2 krumpira","2 žlice ulja","1 l temeljca","1 dl kiselog vrhnja","sol, papar, kopar"],
+   c:["Luk i mrkvu pirjaj na ulju 5 minuta.","Dodaj hrapavce i pirjaj 15 minuta.","Dodaj krumpir i temeljac, kuhaj 20 minuta.","Umiješaj kiselo vrhnje razmućeno s malo juhe i kopar."],
+   sav:"Juha će biti tamnija nego od vrganja; to je zbog mesa hrapavca."}
+ ]},
+"grabov-djed":{
+ sig:"Kao i ostale hrapavce, uvijek ga dobro termički obradi (najmanje 15–20 minuta).",
+ cis:"Koristi klobuke i stručke mladih primjeraka; meso pri rezanju posivi pa pocrni, to je normalno.",
+ cuv:"Dobro se suši. Zamrzava se nakon prženja.",
+ r:[
+  {n:"Grabov djed s palentom",k:"glavno",p:4,v:40,s:["600 g grabovih djedova","250 g palente","1 l vode","1 luk","2 žlice maslaca","1 dl bijelog vina","sol, papar, majčina dušica"],
+   c:["Palentu skuhaj prema uputi.","Luk pirjaj na maslacu 5 minuta.","Dodaj gljive na ploške i prži 15 minuta.","Podlij vinom, dodaj majčinu dušicu i kuhaj dok ne ispari.","Posluži preko palente."],
+   sav:"Može i s miješanim šumskim gljivama."},
+  {n:"Sušeni hrapavci za zimu",k:"zimnica",p:4,v:20,s:["1 kg mladih, čvrstih hrapavaca"],
+   c:["Gljive očisti i nareži na ploške od 5 mm.","Suši na 45 °C dok ne postanu krhke.","Čuvaj u zatvorenim staklenkama."],
+   sav:"Prije pripreme namoči 30 minuta; i sušene kuhaj najmanje 15 minuta."}
+ ]},
+"pecurka":{
+ sig:"Pazi na zamjenu s mladim otrovnim pupavkama: poljska pečurka ima ružičaste, kasnije smeđe do crne listiće i nema vrećicu (vulvu) pri dnu. Gljive s bijelim listićima i vulvom ne beri. Pečurke koje žute i smrde na tintu ili fenol su otrovne (karbolna pečurka).",
+ cis:"Obriši klobuke i odreži dno stručka. Mlade se ne trebaju guliti.",
+ cuv:"Najbolje svježe. Zamrzavaju se nakon prženja.",
+ r:[
+  {n:"Punjene pečurke",k:"predjelo",p:4,v:30,s:["12 većih klobuka pečurke","100 g pršuta ili slanine","1 luk","2 režnja češnjaka","50 g ribanog sira","2 žlice krušnih mrvica","peršin, maslinovo ulje"],
+   c:["Pećnicu ugrij na 200 °C.","Stručke sitno nasjeckaj i s lukom, češnjakom i pršutom prži 5 minuta.","Makni s vatre, umiješaj sir, mrvice i peršin.","Napuni klobuke, pokapaj uljem.","Peci 15–20 minuta."],
+   sav:"Mogu i na roštilju, u aluminijskoj foliji."},
+  {n:"Krem juha od pečuraka",k:"juha",p:4,v:35,s:["500 g pečuraka","1 luk","2 žlice maslaca","1 žlica brašna","8 dl temeljca","2 dl vrhnja za kuhanje","sol, papar, muškatni oraščić"],
+   c:["Luk pirjaj na maslacu 5 minuta.","Dodaj pečurke na ploške i pirjaj 10 minuta.","Pospi brašnom, dolij temeljac i kuhaj 15 minuta.","Izmiksaj štapnim mikserom.","Umiješaj vrhnje, posoli, popapri i dodaj malo muškatnog oraščića."],
+   sav:"Ostavi nekoliko pečenih ploški za ukras."}
+ ]},
+"divovska-puhara":{
+ sig:"Jedi samo puharu koja je iznutra potpuno bijela i čvrsta, kao svježi sir. Svaku prereži uzduž: ako vidiš obris gljive (klobuk i stručak), to je mlada pupavka ili muhara u jajetu i otrovna je. Žućkasta ili smeđa unutrašnjost znači da je prestara.",
+ cis:"Oguli tanku vanjsku kožicu i odreži dno. Nareži na šnite od 1 cm.",
+ cuv:"Ne čuva se dugo: pripremi isti dan. Pohane šnicle se mogu zamrznuti.",
+ r:[
+  {n:"Šnicle od puhare",k:"glavno",p:4,v:25,s:["1 manja puhara (oko 500 g)","2 jaja","100 g brašna","150 g krušnih mrvica","ulje za prženje","sol, papar, limun"],
+   c:["Puharu oguli i nareži na šnite od 1 cm; posoli i popapri.","Uvaljaj u brašno, jaja i mrvice.","Prži u vrućem ulju 2–3 minute sa svake strane.","Ocijedi i posluži s limunom i salatom."],
+   sav:"Okusom podsjeća na pohani sir ili tofu, pa dobro ide uz tartar umak."},
+  {n:"Puhara na tavi s češnjakom",k:"predjelo",p:2,v:15,s:["300 g puhare","2 žlice maslaca","2 režnja češnjaka","peršin, sol, papar"],
+   c:["Puharu nareži na kocke od 2 cm.","Prži na maslacu 6–8 minuta da porumene sa svih strana.","Dodaj češnjak i peršin, prži minutu i posoli."],
+   sav:"Upija masnoću kao spužva, pa je prži na jačoj vatri i ne dodaji previše maslaca."}
+ ]},
+"modrikaca":{
+ sig:"Modrikača se ne jede sirova i treba je kuhati najmanje 15 minuta; nedovoljno kuhana izaziva probavne smetnje. Pazi na zamjenu s ljubičastim koprenkama, koje imaju hrđastosmeđ otisak spora (modrikača ima blijedoružičast).",
+ cis:"Obriši klobuke i odreži dno stručka. Ljubičasta boja ostaje i nakon kuhanja.",
+ cuv:"Najbolja svježa ili ukiseljena; zamrzava se nakon prženja.",
+ r:[
+  {n:"Modrikače na maslacu",k:"predjelo",p:2,v:25,s:["400 g modrikača","2 žlice maslaca","1 ljutika","1 dl bijelog vina","peršin, sol, papar"],
+   c:["Ljutiku pirjaj na maslacu 3 minute.","Dodaj modrikače i prži 10 minuta.","Podlij vinom i kuhaj još 5 minuta da ispari.","Posoli, popapri i pospi peršinom."],
+   sav:"Ima voćni miris i jak okus; dobro ide uz divljač i polentu."},
+  {n:"Ukiseljene modrikače",k:"zimnica",p:4,v:35,s:["1 kg mladih modrikača","4 dl vinskog octa","6 dl vode","1 žlica soli","lovor, papar u zrnu, klinčić"],
+   c:["Modrikače kuhaj 15 minuta u slanoj vodi i ocijedi.","Ocat, vodu i sol zakuhaj.","Slaži u sterilizirane staklenke sa začinima, prelij vrućim octom i zatvori."],
+   sav:"Spremne nakon 2 tjedna; dobra uz hladne narezke."}
+ ]},
+"cigancek":{
+ sig:"Ciganček se uvijek dobro termički obrađuje. Pazi na zamjenu s otrovnim koprenkama: ciganček ima pravi, opnasti prsten na stručku i bjelkastu prevlaku na tjemenu klobuka.",
+ cis:"Odreži stručak (žilav je) i obriši klobuke. Prereži i provjeri crviće.",
+ cuv:"Suši se dobro. Zamrzava se nakon prženja.",
+ r:[
+  {n:"Ciganček u umaku od vrhnja",k:"umak",p:4,v:30,s:["500 g klobuka cigančeka","1 luk","2 žlice maslaca","2 dl vrhnja za kuhanje","sol, papar, kopar ili peršin"],
+   c:["Luk pirjaj na maslacu 5 minuta.","Dodaj cigančeke na ploške i prži 15 minuta.","Dodaj vrhnje i kuhaj 5 minuta.","Posoli, popapri i pospi koprom."],
+   sav:"Uz kuhani krumpir, njoke ili meso."},
+  {n:"Gulaš od cigančeka s krumpirom",k:"glavno",p:4,v:45,s:["600 g cigančeka","2 luka","3 krumpira","2 žlice ulja","1 žlica slatke paprike","7 dl temeljca","lovor, sol, papar"],
+   c:["Luk pirjaj na ulju 8 minuta.","Dodaj gljive i pirjaj 10 minuta.","Umiješaj papriku, dodaj krumpir, lovor i temeljac.","Kuhaj 20 minuta, posoli i popapri."],
+   sav:"Ciganček je čest u crnogoričnim šumama Gorskog kotara, od kasnog ljeta do listopada."}
+ ]},
+"tartuf":{
+ cis:"Tartuf četkicom očisti pod tankim mlazom vode i odmah osuši. Ne guli ga.",
+ cuv:"Svježi bijeli tartuf drži zamotan u papirnati ručnik u zatvorenoj staklenci u hladnjaku i mijenjaj papir svaki dan; najbolji je u prvih 5–7 dana. Zamrzavanjem gubi miris.",
+ r:[
+  {n:"Fuži s bijelim tartufom",k:"umak",p:4,v:30,s:["400 g fuži","80 g maslaca","50 g parmezana","15–20 g bijelog tartufa","sol"],
+   c:["Fuže skuhaj u posoljenoj vodi; sačuvaj šalicu vode.","Maslac rastopi u tavi i dodaj malo vode od kuhanja.","Ubaci fuže i parmezan, promiješaj da se napravi kremast umak.","Na tanjuru preko fuža tanko naribaj ili nareži tartuf."],
+   sav:"Bijeli tartuf se ne kuha: dodaje se sirov, na kraju, da sačuva miris."},
+  {n:"Fritaja s tartufom",k:"glavno",p:2,v:15,s:["5 jaja","10 g tartufa","1 žlica maslaca","2 žlice vrhnja","sol, papar"],
+   c:["Polovicu tartufa naribaj u jaja, dodaj vrhnje, sol i papar; ostavi 15 minuta da jaja upiju miris.","Na maslacu na laganoj vatri prži fritaju dok se odozdo ne stegne, a odozgo ostane sočna.","Preklopi i na tanjuru naribaj ostatak tartufa."],
+   sav:"Najbolje je jaja ostaviti preko noći u zatvorenoj posudi zajedno s tartufom."}
+ ]}
+};
+/* kratki opisi recepata u atlasu ostaju; punih recepata dodajemo i u kratki popis ako vrsta nema nijedan */
+for(const[id,d]of Object.entries(REC_FULL)){const s=S.find(x=>x.id===id);if(s&&(!s.rec||!s.rec.length))s.rec=d.r.map(r=>({n:r.n,t:r.c.slice(0,2).join(" ")}))}
+
 /* Miris mesa prema knjizi R. Božac, za vrste koje su već u atlasu (generirano: tools/gen_book.py) */
 const BOOK_MI={"pupavka": "neugodan", "muhara": "bez", "zuckasta-pupavka": "rotkvica", "proljetna-pupavka": "neugodan", "grmaca": "bez", "tintnjaca": "bez", "naborana-gnojistarka": "bez", "x-coprinellus-disseminatus": "bez", "x-coprinopsis-lagopus": "bez", "x-agaricus-sylvicola": "anis", "mala-sumarica": "voce", "golema-pecurka": "anis", "x-hypholoma-marginatum": "bez", "zelena-viticarka": "rotkvica", "x-protostropharia-semiglobata": "bez", "rana-livadarka": "brasno", "x-kuehneromyces-mutabilis": "bez", "x-pholiota-squarrosa": "rotkvica", "x-pholiota-lenta": "rotkvica", "galerina": "brasno", "x-gymnopilus-penetrans": "bez", "ljuskava-koprenka": "bez", "koprenka": "anis", "obicna-koprenka": "bez", "x-cortinarius-torvus": "voce", "x-cortinarius-elatior": "anis", "blijedolisticava-koprenka": "bez", "vlaknjaca": "bez", "x-inocybe-geophylla": "neugodan", "sivkasta-sljivovaca": "brasno", "sljivovaca": "neugodan", "rudoliska": "brasno", "krhka-brasnjaca": "brasno", "x-laccaria-amethystina": "bez", "maslacna-plosnatica": "voce", "x-gymnopus-confluens": "cesnjak", "sluzava-korjenjaca": "bez", "x-strobilurus-esculentus": "bez", "ljubicasta-sljemovka": "rotkvica", "x-mycena-pelianthina": "rotkvica", "x-mycena-galericulata": "brasno", "x-mycena-epipterygia": "bez", "x-mycena-polygramma": "bez", "zutozelena-vitezovka": "brasno", "x-tricholoma-scalpturatum": "brasno", "svilenkasta-vitezovka": "bez", "blijedoljubicasta-koturnica": "neugodan", "x-melanoleuca-cognata": "brasno", "velika-martincica": "voce", "mirisna-uleknjaca": "anis", "otrovna-brasnjaca": "voce", "x-clitocybe-phyllophila": "anis", "obicna-srastenica": "brasno", "tvrdokozna-srastenica": "bez", "stoglava-srastenica": "brasno", "bijela-srastenica": "brasno", "rujnica": "voce", "lazna-rujnica": "bez", "runjava-mlijecnica": "voce", "x-lactarius-pallidus": "voce", "x-lactarius-necator": "bez", "paprena-mlijecnica": "bez", "bukova-mlijecnica": "bez", "ljubicastozelena-krasnica": "bez", "smedastozelena-krasnica": "anis", "krasnica-zelena": "bez", "x-russula-ochroleuca": "bez", "siva-krasnica": "bez", "jestiva-krasnica": "bez", "maslinasta-krasnica": "bez", "x-russula-foetens": "anis", "modrolisna-krasnica": "voce", "x-russula-queletii": "voce", "x-russula-atropurpurea": "voce", "zlatna-krasnica": "bez", "tvrda-krasnica": "bez", "ljuta-krasnica": "voce", "x-hygrophorus-olivaceoalbus": "bez", "x-gliophorus-psittacinus": "bez", "lisicarka": "voce", "ljevkasta-lisicica": "bez", "x-lentinellus-cochleatus": "anis", "ludara": "neugodan", "x-cyanoboletus-pulverulentus": "bez", "zucara": "bez", "podstavka": "bez", "zlataca": "voce", "kestenjasti-vrganj": "voce", "vukovo-meso": "bez", "x-schizophyllum-commune": "bez", "crnogoricna-srnjaca": "bez", "x-mutinus-caninus": "neugodan", "siljasti-smrcak": "bez"};
 
@@ -1385,7 +1649,7 @@ function openSheet(id){
   const psiNote=s.psi?'<div class="note dead"><strong>Psihoaktivna gljiva, zakonom zabranjena.</strong> Branje, posjedovanje i dijeljenje su kažnjivi. Ako je netko pojeo nepoznatu malu gljivu, odmah nazovi 112 ili Centar za kontrolu otrovanja (01 2348 342) i ponesi ostatak gljive.</div>':'';
   const zastNote=s.zast?'<div class="note danger"><strong>Strogo zaštićena vrsta.</strong> Branje je zabranjeno.</div>':'';
   const look=s.zam.length?'<div class="d-sec"><span class="eyebrow">Ne zamijeni s</span><div class="look">'+s.zam.map(z=>byId[z]).filter(Boolean).map(z=>'<button data-id="'+z.id+'">'+pill(z.st)+'<span><strong>'+esc(z.hr)+'</strong><br><span class="lat">'+esc(z.lat)+'</span></span></button>').join("")+'</div></div>':"";
-  const rec=s.rec&&s.rec.length?'<div class="d-sec"><span class="eyebrow">Priprema</span>'+s.rec.map(r=>'<div class="recipe"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'</div>':"";
+  const rec=REC_FULL[s.id]?'<div class="d-sec"><span class="eyebrow">Priprema i recepti</span>'+fullRecHtml(s,"sve")+'</div>':s.rec&&s.rec.length?'<div class="d-sec"><span class="eyebrow">Priprema</span>'+s.rec.map(r=>'<div class="recipe"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'</div>':"";
   $("#sheet").innerHTML='<div class="sheet-bar"><span></span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div>'+
    '<div class="d-head">'+art(s)+'<div style="min-width:0;display:flex;flex-direction:column;gap:4px"><h2 id="dName"'+(s.hr===s.lat?' style="font-style:italic"':'')+'>'+esc(s.hr)+'</h2><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span>'+(s.alt?'<span class="small">Zove se i: '+esc(s.alt)+'</span>':'')+'<div class="line" style="display:flex;gap:6px;flex-wrap:wrap">'+pill(s.st)+carePill(s)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+'</div></div></div>'+
    '<div id="dPhoto">'+photoFigure(s)+'</div><div class="d-sec"><span class="eyebrow">Glavne karakteristike</span><ul class="keyf">'+s.kar.map(k=>'<li>'+esc(k)+'</li>').join("")+'</ul></div>'+
@@ -1545,8 +1809,25 @@ $("#analyze").addEventListener("click",runStep1);
 maxImgs=3;renderThumbs();
 
 /* ---------- recipes ---------- */
+/* puni recepti: sastojci, koraci, savjet; čišćenje, čuvanje i sigurnost */
+const REC_KAT={juha:"Juhe",umak:"Umaci i tjestenina",glavno:"Glavna jela",predjelo:"Predjela i prilozi",zimnica:"Zimnica"};
+let recKat="sve";
+function fullRecHtml(s,kat){const d=REC_FULL[s.id];if(!d)return"";const rs=d.r.filter(r=>!kat||kat==="sve"||r.k===kat);
+  return (d.sig?'<div class="note danger"><strong>⚠ Prije pripreme:</strong> '+esc(d.sig)+'</div>':'')+
+   rs.map(r=>'<details class="frec"><summary><strong>'+esc(r.n)+'</strong><span class="small"> · '+(r.k==="zimnica"?"":r.p+(r.p===1?" osoba":r.p<5?" osobe":" osoba")+' · ')+r.v+' min · '+esc(REC_KAT[r.k]||"")+'</span></summary>'+
+    '<h5>Sastojci</h5><ul>'+r.s.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul><h5>Priprema</h5><ol>'+r.c.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol>'+(r.sav?'<p class="small"><strong>Savjet:</strong> '+esc(r.sav)+'</p>':'')+'</details>').join("")+
+   ((!kat||kat==="sve")?'<details class="frec"><summary><strong>Čišćenje i čuvanje</strong></summary><h5>Čišćenje</h5><p>'+esc(d.cis)+'</p><h5>Čuvanje</h5><p>'+esc(d.cuv)+'</p></details>':'')}
 function renderRecipes(){
-  $("#recList").innerHTML=S.filter(s=>s.rec&&s.rec.length).map(s=>'<div class="panel"><div class="d-head" style="grid-template-columns:56px 1fr">'+art(s).replace('class="art"','class="art" style="width:56px;height:56px;border-radius:8px;background:var(--surface-2)"')+'<div style="min-width:0"><h3>'+esc(s.hr)+'</h3><span class="lat">'+esc(s.lat)+'</span> '+pill(s.st)+'</div></div>'+s.rec.map(r=>'<div class="recipe" style="background:var(--bg)"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'<button class="btn ghost small" data-id="'+s.id+'">Pogledaj vrstu</button></div>').join("");
+  const cats=[["sve","Sve"]].concat(Object.entries(REC_KAT));
+  $("#recCats").innerHTML=cats.map(([k,l])=>'<button type="button" class="chip" data-rk="'+k+'" aria-pressed="'+(recKat===k)+'">'+l+'</button>').join("");
+  const full=Object.keys(REC_FULL).map(id=>byId[id]).filter(Boolean).filter(s=>recKat==="sve"||REC_FULL[s.id].r.some(r=>r.k===recKat));
+  const head=s=>'<div class="d-head" style="grid-template-columns:56px 1fr">'+art(s).replace('class="art"','class="art" style="width:56px;height:56px;border-radius:8px;background:var(--surface-2)"')+'<div style="min-width:0"><h3>'+esc(s.hr)+'</h3><span class="lat">'+esc(s.lat)+'</span> '+pill(s.st)+'</div></div>';
+  $("#recList").innerHTML=full.map(s=>'<div class="panel">'+head(s)+fullRecHtml(s,recKat)+'<button class="btn ghost small" data-id="'+s.id+'">Pogledaj vrstu</button></div>').join("")+
+   (recKat!=="sve"?'':'<h3 style="margin:14px 0 4px">Ostale vrste</h3>'+renderShortRecipes());
+}
+$("#recCats").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");if(!b)return;recKat=b.dataset.rk;renderRecipes();if(window.gcEv)window.gcEv("recepti-"+recKat)});
+function renderShortRecipes(){
+  return S.filter(s=>s.rec&&s.rec.length&&!REC_FULL[s.id]).map(s=>'<div class="panel"><div class="d-head" style="grid-template-columns:56px 1fr">'+art(s).replace('class="art"','class="art" style="width:56px;height:56px;border-radius:8px;background:var(--surface-2)"')+'<div style="min-width:0"><h3>'+esc(s.hr)+'</h3><span class="lat">'+esc(s.lat)+'</span> '+pill(s.st)+'</div></div>'+s.rec.map(r=>'<div class="recipe" style="background:var(--bg)"><h4>'+esc(r.n)+'</h4><p>'+esc(r.t)+'</p></div>').join("")+'<button class="btn ghost small" data-id="'+s.id+'">Pogledaj vrstu</button></div>').join("");
 }
 
 /* ---------- journal ---------- */
@@ -2060,7 +2341,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.0.1";
+const APP_VERSION="v3.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
