@@ -46,6 +46,7 @@ img{max-width:100%}
 .leaflet-container{background:var(--surface-2)}
 </style>
 <title>Gljive Hrvatske</title>
+<script>try{var t=JSON.parse(localStorage.getItem("gh-theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <meta name="description" content="Atlas gljiva, prepoznavanje sa slike, vodič za branje, recepti i dnevnik nalaza.">
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -135,9 +136,11 @@ a.btn{display:inline-block;text-decoration:none}
 .mo[aria-pressed="true"] .lbl{color:var(--accent);font-weight:700}
 .mo.now .lbl{text-decoration:underline}
 
-.hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0}
+.hdr-r .sub{max-width:7.5em;text-align:right;line-height:1.25}
 .hdr-tools{display:flex;gap:6px}
 .tool-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-width:44px;height:36px;padding:0 10px;font-weight:800}
+#themeBtn{display:inline-flex;align-items:center;justify-content:center;color:var(--ink);padding:0 8px;min-width:40px}
 .tool-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .tool-btn.sos{background:var(--dead-bg);color:var(--dead);border-color:var(--dead-bg)}
 html.big body{font-size:19px}html.big{font-size:118%}
@@ -293,7 +296,7 @@ form.log .full{grid-column:1/-1}
         <h1>Gljive Hrvatske</h1>
       </div>
     </div>
-    <div class="hdr-r"><div class="hdr-tools"><button type="button" class="tool-btn" id="bigTxt" aria-pressed="false" title="Veća slova">Aa</button><button type="button" class="tool-btn sos" id="sosBtn" title="Pojeo sam nepoznatu gljivu">SOS</button></div><div class="sub" id="todayLbl"></div></div>
+    <div class="hdr-r"><div class="hdr-tools"><button type="button" class="tool-btn" id="themeBtn" title="Tema: automatski" aria-label="Tema: automatski (dodirni za promjenu)"></button><button type="button" class="tool-btn" id="bigTxt" aria-pressed="false" title="Veća slova">Aa</button><button type="button" class="tool-btn sos" id="sosBtn" title="Pojeo sam nepoznatu gljivu">SOS</button></div><div class="sub" id="todayLbl"></div></div>
   </header>
 
   <!-- ATLAS -->
@@ -1747,6 +1750,18 @@ $("#sheet").addEventListener("click",e=>{
 });
 
 /* ---------- veća slova ---------- */
+/* tema: automatski prema mobitelu, uvijek svijetla ili uvijek tamna */
+const THEMES=[["auto","automatski",'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>'],
+ ["light","svijetla",'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'],
+ ["dark","tamna",'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>']];
+function applyTheme(t){const T=THEMES.find(x=>x[0]===t)||THEMES[0];
+  if(T[0]==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",T[0]);
+  const b=$("#themeBtn");b.innerHTML=T[2];b.title="Tema: "+T[1];b.setAttribute("aria-label","Tema: "+T[1]+" (dodirni za promjenu)");
+  const dark=T[0]==="dark"||(T[0]==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#111712":"#3f5a3a"))}
+applyTheme(store.get("gh-theme","auto"));
+$("#themeBtn").addEventListener("click",()=>{const cur=store.get("gh-theme","auto"),i=THEMES.findIndex(x=>x[0]===cur),nx=THEMES[(i+1)%3][0];store.set("gh-theme",nx);applyTheme(nx);
+  const l=$("#todayLbl"),old=l.textContent;l.textContent="Tema: "+THEMES.find(x=>x[0]===nx)[1];clearTimeout(window._thT);window._thT=setTimeout(()=>{l.textContent=old},1800);if(window.gcEv)window.gcEv("tema-"+nx)});
 function applyBig(on){document.documentElement.classList.toggle("big",on);$("#bigTxt").setAttribute("aria-pressed",String(on))}
 applyBig(!!store.get("gh-big",false));
 $("#bigTxt").addEventListener("click",()=>{const on=!document.documentElement.classList.contains("big");store.set("gh-big",on);applyBig(on);if(window.gcEv)window.gcEv("velika-slova")});
@@ -2025,7 +2040,7 @@ function whatsNew(force){
   if(!force&&!store.get("gh-accept",null)){firstRun();return}
   if(!force&&store.get("gh-seen-ver",null)===WHATSNEW_VER)return;
   lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
-  const L=[["🧠","Vlastiti model za prepoznavanje","601 vrsta, učen na 155.000 fotografija; radi na mobitelu i bez interneta"],["❓","Pametnija pitanja","kod krasnica i mliječnica pita za okus, boju mlijeka i otisak spora"],["⚠️","Potreban oprez","jestive vrste koje imaju otrovnog dvojnika posebno su označene"],["📍","Moja mjesta","spremi parkirališta i mjesta s gljivama, preimenuj ih, podijeli ili pogledaj na karti"],["🧭","Kompas na iPhoneu","uključuje se jednim dodirom; upute kako trajno dopustiti lokaciju"],["🙏","Zasluge","popis autora fotografija na kojima je model učio, u podnožju aplikacije"]];
+  const L=[["🧠","Vlastiti model za prepoznavanje","601 vrsta, učen na 155.000 fotografija; radi na mobitelu i bez interneta"],["❓","Pametnija pitanja","kod krasnica i mliječnica pita za okus, boju mlijeka i otisak spora"],["⚠️","Potreban oprez","jestive vrste koje imaju otrovnog dvojnika posebno su označene"],["📍","Moja mjesta","spremi parkirališta i mjesta s gljivama, preimenuj ih, podijeli ili pogledaj na karti"],["🧭","Kompas na iPhoneu","uključuje se jednim dodirom; upute kako trajno dopustiti lokaciju"],["🌓","Svijetla ili tamna tema","novi gumb gore: automatski prema mobitelu, uvijek svijetla ili uvijek tamna"],["🙏","Zasluge","popis autora fotografija na kojima je model učio, u podnožju aplikacije"]];
   $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 3.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
   store.set("gh-seen-ver",WHATSNEW_VER);
 }
@@ -2045,7 +2060,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.0";
+const APP_VERSION="v3.0.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
