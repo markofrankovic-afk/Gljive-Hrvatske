@@ -2006,7 +2006,7 @@ function whereAmI(id){
 }
 
 /* ---------- Što je novo (prikaže se jednom po verziji) ---------- */
-const WHATSNEW_VER="2.0";
+const WHATSNEW_VER="3.0";
 /* jednokratno upozorenje prije prvog korištenja */
 function firstRun(){
   if(store.get("gh-accept",null))return false;
@@ -2025,8 +2025,8 @@ function whatsNew(force){
   if(!force&&!store.get("gh-accept",null)){firstRun();return}
   if(!force&&store.get("gh-seen-ver",null)===WHATSNEW_VER)return;
   lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
-  const L=[["🚗","Vrati me do auta","spremi gdje si parkirao, strelica te vodi natrag i bez signala"],["📍","Gdje sam? za 112","koordinate i gotov SMS za hitnu službu"],["🆘","SOS kod trovanja","pozivi, štoperica od obroka i što ponijeti u bolnicu"],["🌦️","Kada ići","prognoza za 7 dana po regijama i što sada tražiti"],["🌳","Ispod stabla","vrste koje rastu uz bukvu, smreku, bor…"],["📄","Moja dozvola","spremljena u aplikaciji, otvara se bez signala"],["📸","Podijeli nalaz","lijepa slika za Facebook, bez otkrivanja mjesta"],["🧭","Dnevnik","GPS mjesta nalaza, vrijeme uz nalaz i brojač 3 kg"],["🧠","Kviz u 3 razine","s ocjenom na kraju"],["Aa","Veća slova","jednim dodirom, gore desno"]];
-  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 2.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
+  const L=[["🧠","Vlastiti model za prepoznavanje","601 vrsta, učen na 155.000 fotografija; radi na mobitelu i bez interneta"],["❓","Pametnija pitanja","kod krasnica i mliječnica pita za okus, boju mlijeka i otisak spora"],["⚠️","Potreban oprez","jestive vrste koje imaju otrovnog dvojnika posebno su označene"],["📍","Moja mjesta","spremi parkirališta i mjesta s gljivama, preimenuj ih, podijeli ili pogledaj na karti"],["🧭","Kompas na iPhoneu","uključuje se jednim dodirom; upute kako trajno dopustiti lokaciju"],["🙏","Zasluge","popis autora fotografija na kojima je model učio, u podnožju aplikacije"]];
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 3.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
   store.set("gh-seen-ver",WHATSNEW_VER);
 }
 function zasluge(){
@@ -2034,18 +2034,18 @@ function zasluge(){
   const base=(typeof LMCFG!=="undefined"&&LMCFG.base)||"model/";
   $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Zasluge</h2>'+
    '<p><strong>Prepoznavanje sa slike.</strong> Vlastiti model Gljiva Hrvatske, izgrađen na osnovnom modelu EfficientNet-B2 iz biblioteke timm (Ross Wightman, licenca Apache 2.0).</p>'+
-   '<p id="zasBroj">Model je učio na fotografijama koje su autori zajednice <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> objavili pod slobodnim licencama CC0 i CC BY. Hvala svima.</p>'+
+   '<p id="zasBroj">Model je učio na fotografijama koje su autori objavili na iNaturalistu i Wikimedia Commonsu pod slobodnim licencama CC0 i CC BY ili kao javno dobro. Hvala svima.</p>'+
    '<p><strong>Fotografije u atlasu.</strong> Autor i licenca navedeni su ispod svake fotografije.</p>'+
    '<details><summary>Autori fotografija za učenje modela</summary><p class="small" id="zasAut">Učitavam popis…</p></details></div>';
   fetch(base+"zasluge.json").then(r=>{if(!r.ok)throw 0;return r.json()}).then(z=>{
     const n=x=>x.toLocaleString("hr-HR");
-    $("#zasBroj").innerHTML='Model je učio na '+n(z.fotografija)+' fotografija ('+n(z.vrsta)+' vrsta) koje je '+n(z.autori.length)+' autora zajednice <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> objavilo pod slobodnim licencama CC BY ('+n(z.cc_by)+') i CC0 ('+n(z.cc0)+'). Hvala svima.';
+    $("#zasBroj").innerHTML='Model je učio na '+n(z.fotografija)+' fotografija ('+n(z.vrsta)+' vrsta) koje je '+n(z.autori.length)+' autora objavilo na <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalistu</a>'+(z.commons?' ('+n(z.inat)+') i <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commonsu</a> ('+n(z.commons)+')':'')+' pod slobodnim licencama CC BY ('+n(z.cc_by)+'), CC0 ('+n(z.cc0)+')'+(z.pd?' i kao javno dobro ('+n(z.pd)+')':'')+'. Hvala svima.';
     $("#zasAut").textContent=z.autori.map(a=>a[0]+" ("+a[1]+")").join(", ")+".";
   }).catch(()=>{const e=$("#zasAut");if(e)e.textContent="Popis autora trenutno nije dostupan (potreban je internet)."});
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v2.7";
+const APP_VERSION="v3.0";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2328,7 +2328,7 @@ document.addEventListener("click",e=>{
 const LMCFG={base:"model/",ortScript:"vendor/ort/ort.wasm.min.js",mjsBase:"vendor/ort/",wasm:"vendor/ort/ort-wasm-simd-threaded.wasm",server:true};
 /* ================= Prepoznavanje na uređaju (besplatno, radi bez interneta) =================
    Model: vlastiti model Gljiva Hrvatske (EfficientNet-B2, 601 vrsta iz atlasa), učen na fotografijama
-   zajednice iNaturalist pod licencama CC0 i CC BY; bilježnica za treniranje: trening/GljiveHrvatske_model.ipynb.
+   s iNaturalista i Wikimedia Commonsa pod licencama CC0, CC BY i javno dobro; bilježnica za treniranje: trening/GljiveHrvatske_model.ipynb.
    Datoteke: model/model.onnx, model/labels.json (indeks -> latinski naziv), model/meta.json (ulaz i normalizacija). */
 
 /* Stari i novi latinski nazivi (ostalo iz ranijeg modela; vlastiti model koristi nazive iz atlasa). */
@@ -2637,10 +2637,10 @@ function renderLocal(){
   if(qs.length){
     h+='<span class="eyebrow">Odgovori za točnije određivanje</span>'+qs.map(q=>'<div class="q"><strong>'+(PAIRQ[q.k]||q.H===100?'⚠️ ':'')+esc(PAIRQ[q.k]?PAIRQ[q.k].q:QTEXT[q.k])+'</strong><div class="qopts">'+q.opts.map(v=>'<button class="chip" data-lq="'+q.k+'" data-lv="'+esc(v)+'" aria-pressed="'+(LR.qa[q.k]===v)+'">'+esc(optLabel(q.k,v))+'</button>').join("")+'<button class="chip" data-lq="'+q.k+'" data-lv="?" aria-pressed="'+(LR.qa[q.k]==="?")+'">Ne znam</button></div></div>').join("");
   }
-  if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+' % vjerojatnosti otpada na vrste kojih nema u atlasu.</p>';
+  if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+(LM.meta&&LM.meta.vlastiti?' % vjerojatnosti otpada na druge, manje slične vrste.':' % vjerojatnosti otpada na vrste kojih nema u atlasu.')+'</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+(best?'<button class="btn ghost small" id="lmLog" data-sp="'+best.s.id+'">Zapiši u dnevnik</button>':'')+'</div>';
-  h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 148.000 fotografija zajednice iNaturalist za 601 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
+  h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 155.000 fotografija s iNaturalista i Wikimedia Commonsa za 601 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
   $("#lmOut").innerHTML=h;
 }
 async function runLocal(){
