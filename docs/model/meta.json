@@ -1,5 +1,5 @@
 {
- "model": "gh-efficientnet_b2.ra_in1k-v5",
+ "model": "gh-efficientnet_b2.ra_in1k-v6",
  "input_size": [
   3,
   288,
@@ -18,11 +18,11 @@
  "crop_pct": 1.0,
  "interpolation": "bicubic",
  "num_classes": 601,
- "verzija": 5,
+ "verzija": 6,
  "vlastiti": true,
  "licencija": "Vlastiti model Gljiva Hrvatske. Osnova: timm efficientnet_b2.ra_in1k (Apache 2.0). Fotografije: iNaturalist i Wikimedia Commons, CC0, javno dobro i CC BY (autori u zasluge.csv).",
- "top1_provjera": 0.7883,
- "top3_provjera": 0.9068,
+ "top1_provjera": 0.7884,
+ "top3_provjera": 0.9059,
  "parts": [
   "model.onnx.000",
   "model.onnx.001",
