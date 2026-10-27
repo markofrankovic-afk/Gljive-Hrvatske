@@ -1533,6 +1533,13 @@ for(const s of S){if(!s.rl)continue;
 /* potvrđeno u izvorima kao strogo zaštićene (branje zabranjeno) */
 for(const id of ["blagva","kraljevski-vrganj","kozonoga-rupicarka"])if(byIdTmp(id))byIdTmp(id).zast=1;
 function byIdTmp(id){return S.find(x=>x.id===id)}
+/* 3.2: dva naziva iz knjige spojena u jedan; oblik crteža za zdjeličarke, smrčke i hrčke */
+(()=>{const s=byIdTmp("b-amanita-aspera");if(s&&/kisobranasta/.test(s.hr)){s.hr="Hrapava muhara";s.alt=(s.alt?s.alt+", ":"")+"kišobranasta muhara"}
+  for(const x of S){const g=(x.lat||"").split(" ")[0];
+    const CUPC={Sarcoscypha:"#c42a26",Aleuria:"#e8761e",Scutellinia:"#d9441c",Caloscypha:"#e8a21e",Plectania:"#2c2624",Pseudoplectania:"#2c2624",Urnula:"#2c2624",Humaria:"#e9e2d2",Bulgaria:"#2c2624"};if(CUPC[g])x.cap=CUPC[g];
+    if(/^(Aleuria|Peziza|Sarcoscypha|Scutellinia|Paxina|Caloscypha|Humaria|Geopora|Plectania|Pseudoplectania|Urnula|Disciotis|Discina|Tarzetta|Bulgaria|Sarcosphaera)$/.test(g))x.shape="cup";
+    else if(/^(Morchella|Mitrophora)$/.test(g))x.shape="morel";
+    else if(g==="Gyromitra")x.shape="brain"}})();
 
 /* Psihoaktivne gljive: samo radi prepoznavanja i izbjegavanja. Bez sezone, recepata i uputa za branje. */
 const PSI_NAP="Psihoaktivna gljiva (sadrži psilocibin). Branje, posjedovanje i dijeljenje zabranjeni su Zakonom o suzbijanju zlouporabe droga. Nije jestiva: može izazvati paniku, psihozu i nezgode, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama (Galerina) i sitnim gljivama roda Conocybe/Pholiotina.";
@@ -1590,6 +1597,7 @@ function drawArt(s){
     case"ear":body='<rect x="10" y="8" width="10" height="66" fill="#7a6a58"/><path d="M20 24 Q48 10 60 30 Q66 50 46 60 Q30 66 22 52 Q34 46 30 36 Q26 30 20 32 Z" fill="'+c+'"/><path d="M30 30 Q44 26 50 40" stroke="#0003" stroke-width="2" fill="none"/>';break;
     case"phallus":body='<path d="M30 72 Q30 62 36 62 L44 62 Q50 62 50 72 Z" fill="#f4f1e8" stroke="#0003"/><rect x="35" y="22" width="10" height="42" rx="4" fill="'+t+'"/><path d="M33 26 Q33 10 40 10 Q47 10 47 26 Z" fill="'+c+'"/>';break;
     case"lattice":body='<path d="M28 72 Q28 64 34 64 L46 64 Q52 64 52 72 Z" fill="#f4f1e8" stroke="#0003"/><circle cx="40" cy="42" r="22" fill="none" stroke="'+c+'" stroke-width="5"/><path d="M22 34 Q40 44 58 34 M22 52 Q40 40 58 52 M40 20 Q30 42 40 64 M40 20 Q50 42 40 64" stroke="'+c+'" stroke-width="5" fill="none"/>';break;
+    case"cup":body='<path d="M12 44 Q14 70 40 70 Q66 70 68 44 Z" fill="'+c+'" opacity=".8"/><ellipse cx="40" cy="44" rx="28" ry="11" fill="'+c+'"/><ellipse cx="40" cy="45" rx="22" ry="7.5" fill="#0002"/>';break;
     case"small":body='<rect x="38" y="44" width="4" height="28" fill="'+t+'"/><rect x="35" y="52" width="10" height="2" fill="#5a3a20"/><path d="M26 46 Q40 30 54 46 Z" fill="'+c+'"/>';break;
     default:body='<path d="M34 72 Q32 56 35 42 L45 42 Q48 56 46 72 Z" fill="'+t+'"/>'+ring+'<path d="M12 44 Q14 18 40 18 Q66 18 68 44 Z" fill="'+c+'"/>'+warts+volva;
   }
@@ -1901,36 +1909,57 @@ const shuf=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
 const genusOfS=s=>(s.lat||"").split(" ")[0];
 function quizPic(s){return PHOTOS[s.id]?'<img src="foto/'+encodeURIComponent(s.id)+'.jpg" alt="Fotografija gljive">':drawArt(s).replace('class="art"','class="art" style="width:100%;height:100%"')}
 function qKar(s){return (s.kar&&s.kar.length?s.kar.slice(0,2).join(". "):s.nap||"").replace(/\.\./g,".")}
-function quizBuild(lev){
+/* Kviz: samo vrste (ne rodovi), svaka fotografija samo jednom; nedavno viđene vrste idu na kraj reda */
+function quizEligible(){const own={},ok=[];
+  for(const s of S){const p=PHOTOS[s.id];if(!p||/spp\.?$|\bsp\.$/.test(s.lat||"")||!s.hr)continue;const k=p.izvor||s.id;if(own[k])continue;own[k]=s.id;ok.push(s.id)}
+  return ok}
+const QREC_K="gh-quiz-recent";
+function qFresh(ids){const rec=store.get(QREC_K,[]);const r=new Set(rec);const a=shuf(ids.filter(x=>!r.has(x))),b=ids.filter(x=>r.has(x)).sort((x,y)=>rec.indexOf(x)-rec.indexOf(y));return a.concat(b)}
+function qRemember(items){const rec=store.get(QREC_K,[]).filter(x=>!items.some(it=>it.shown===x));store.set(QREC_K,rec.concat(items.map(it=>it.shown)).slice(-150))}
+function quizBuild(lev){const items=quizBuild0(lev);qRemember(items);return items}
+function quizBuild0(lev){
+  const ELIG=quizEligible(),EL=new Set(ELIG),base=s=>!s.ext&&!s.id.startsWith("b-");
   if(lev==="s"){
-    const pairs=shuf(QUIZ_PAIRS.filter(p=>byId[p[0]]&&byId[p[1]])).slice(0,10);
-    return pairs.map(p=>{const shown=Math.random()<.6?p[0]:p[1];return{t:"name",shown,opts:shuf([p[0],p[1]]),expl:p[2]}});
+    /* parovi zamjena: ručno opisani + popis "zamjene" iz opisa vrsta */
+    const seen=new Set(),pairs=[];
+    const add=(a,b,e)=>{if(!byId[a]||!byId[b]||a===b)return;const k=[a,b].sort().join("|");if(seen.has(k))return;seen.add(k);pairs.push([a,b,e])};
+    QUIZ_PAIRS.forEach(p=>add(p[0],p[1],p[2]));
+    S.forEach(s=>{if(!base(s))return;(s.zam||[]).forEach(z=>{if(byId[z]&&byId[z].st!==s.st&&(EL.has(s.id)||EL.has(z)))add(s.id,z,"")})});
+    const recL=store.get(QREC_K,[]),rs=x=>{const i=recL.indexOf(x);return i<0?-1:i};
+    const order=shuf(pairs).map(p=>[p,Math.max(rs(p[0]),rs(p[1]))]).sort((x,y)=>x[1]-y[1]).map(x=>x[0]);const out=[],used=new Set();
+    for(const p of order){if(out.length>=10)break;
+      const can=[p[0],p[1]].filter(x=>EL.has(x)&&!used.has(x));if(!can.length)continue;
+      const rec=new Set(store.get(QREC_K,[]));const shown=(can.find(x=>!rec.has(x))&&Math.random()<.7?can.find(x=>!rec.has(x)):can[Math.floor(Math.random()*can.length)]);
+      const other=shown===p[0]?p[1]:p[0];used.add(shown);used.add(other);
+      out.push({t:"name",shown,opts:shuf([p[0],p[1]]),expl:p[2]||(byId[shown].hr+": "+qKar(byId[shown])+". "+byId[other].hr+": "+qKar(byId[other])+".")})}
+    return out;
   }
-  const photo=Object.keys(PHOTOS).filter(id=>byId[id]);
   if(lev==="l"){
-    const pool=QEASY.filter(id=>byId[id]&&(PHOTOS[id]||!photo.length));
-    return shuf(pool).slice(0,10).map(id=>{const g=genusOfS(byId[id]);
+    const easy=QEASY.filter(id=>EL.has(id)),more=ELIG.filter(id=>base(byId[id])&&!easy.includes(id)&&["jestiva","otrovna","smrtno"].includes(byId[id].st));
+    const pool=easy.concat(more),pick=[],gs=new Set();
+    for(const id of qFresh(easy).slice(0,6).concat(qFresh(more))){if(pick.length>=10)break;const g=genusOfS(byId[id]);if(gs.has(g)&&pick.length<9)continue;gs.add(g);pick.push(id)}
+    return shuf(pick).map(id=>{const g=genusOfS(byId[id]);
       const d=shuf(pool.filter(x=>x!==id&&genusOfS(byId[x])!==g));const opts=[id];
       for(const x of d){if(opts.length>=3)break;if(!opts.some(o=>genusOfS(byId[o])===genusOfS(byId[x])))opts.push(x)}
       return{t:"name",shown:id,opts:shuf(opts),expl:qKar(byId[id])}});
   }
   /* teško: 6 pitanja "koja je ovo vrsta" (4 ponude, slične vrste) + 4 pitanja o jestivosti */
   const partner={};QUIZ_PAIRS.forEach(p=>{if(byId[p[0]]&&byId[p[1]]){(partner[p[0]]=partner[p[0]]||[]).push([p[1],p[2]]);(partner[p[1]]=partner[p[1]]||[]).push([p[0],p[2]])}});
-  const cand=shuf(photo.filter(id=>byId[id].hr&&!byId[id].nc));
+  const cand=qFresh(ELIG.filter(id=>!byId[id].nc));
   const items=[],used=new Set();
   for(const id of cand){if(items.length>=6)break;const s=byId[id],g=genusOfS(s);
-    const sameG=shuf(S.filter(x=>x.id!==id&&genusOfS(x)===g&&!x.nc&&x.hr&&x.hr!==s.hr).map(x=>x.id));
+    const sameG=shuf(S.filter(x=>x.id!==id&&genusOfS(x)===g&&!x.nc&&x.hr&&x.hr!==s.hr&&!/spp/.test(x.lat)).map(x=>x.id));
     const pr=partner[id]?partner[id][0]:null;
     const opts=[id];if(pr)opts.push(pr[0]);for(const x of sameG){if(opts.length>=4)break;if(!opts.includes(x))opts.push(x)}
     if(opts.length<4)continue;used.add(id);
     items.push({t:"name",shown:id,opts:shuf(opts),expl:(pr&&pr[0]&&opts.includes(pr[0])?pr[1]+" ":"")+qKar(s)})}
-  const ed=shuf(photo.filter(id=>!used.has(id)&&["jestiva","nejestiva","otrovna","smrtno"].includes(byId[id].st)));
-  const byst={};ed.forEach(id=>(byst[byId[id].st]=byst[byId[id].st]||[]).push(id));
-  const pick=[];for(const k of shuf(Object.keys(byst)))if(byst[k].length)pick.push(byst[k].shift());
-  for(const id of ed){if(pick.length>=4)break;if(!pick.includes(id))pick.push(id)}
-  pick.slice(0,4).forEach(id=>items.push({t:"st",shown:id,opts:["jestiva","nejestiva","otrovna","smrtno"],expl:byId[id].nap||qKar(byId[id])}));
-  if(byId.galerina){items.length=Math.min(items.length,9);items.push({t:"lbm",shown:"galerina",opts:["livada","miris","ne"],expl:"Ovo je rebrasta patuljica (Galerina marginata), smrtno otrovna. Male smeđe gljive, bilo s livade ili s drva, ne beru se ni za kakvu svrhu: među njima su smrtno otrovne vrste, a i psihoaktivne su zakonom zabranjene i nisu jestive."})}
-  return shuf(items);
+  const ed=qFresh(ELIG.filter(id=>!used.has(id)&&id!=="galerina"&&["jestiva","nejestiva","otrovna","smrtno"].includes(byId[id].st)));
+  const want=shuf(["jestiva","nejestiva","otrovna","smrtno"]),pick=[];
+  for(const st of want){const id=ed.find(x=>byId[x].st===st&&!pick.includes(x));if(id)pick.push(id)}
+  pick.forEach(id=>items.push({t:"st",shown:id,opts:["jestiva","nejestiva","otrovna","smrtno"],expl:byId[id].nap||qKar(byId[id])}));
+  const recG=store.get(QREC_K,[]).slice(-30).includes("galerina");
+  if(byId.galerina&&!recG&&Math.random()<.5){items.length=Math.min(items.length,9);items.push({t:"lbm",shown:"galerina",opts:["livada","miris","ne"],expl:"Ovo je rebrasta patuljica (Galerina marginata), smrtno otrovna. Male smeđe gljive, bilo s livade ili s drva, ne beru se ni za kakvu svrhu: među njima su smrtno otrovne vrste, a i psihoaktivne su zakonom zabranjene i nisu jestive."})}
+  return shuf(items).slice(0,10);
 }
 function quizStart(lev){
   lev=QLEV[lev]?lev:"s";
@@ -2341,7 +2370,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.1";
+const APP_VERSION="v3.1.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
