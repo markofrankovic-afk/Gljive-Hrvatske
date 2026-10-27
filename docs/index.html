@@ -2331,7 +2331,7 @@ function whereAmI(id){
 }
 
 /* ---------- Što je novo (prikaže se jednom po verziji) ---------- */
-const WHATSNEW_VER="3.0";
+const WHATSNEW_VER="3.2";
 /* jednokratno upozorenje prije prvog korištenja */
 function firstRun(){
   if(store.get("gh-accept",null))return false;
@@ -2350,8 +2350,8 @@ function whatsNew(force){
   if(!force&&!store.get("gh-accept",null)){firstRun();return}
   if(!force&&store.get("gh-seen-ver",null)===WHATSNEW_VER)return;
   lastFocus=document.activeElement;Q=null;$("#scrim").hidden=false;$("#sheet").hidden=false;
-  const L=[["🧠","Vlastiti model za prepoznavanje","601 vrsta, učen na 155.000 fotografija; radi na mobitelu i bez interneta"],["❓","Pametnija pitanja","kod krasnica i mliječnica pita za okus, boju mlijeka i otisak spora"],["⚠️","Potreban oprez","jestive vrste koje imaju otrovnog dvojnika posebno su označene"],["📍","Moja mjesta","spremi parkirališta i mjesta s gljivama, preimenuj ih, podijeli ili pogledaj na karti"],["🧭","Kompas na iPhoneu","uključuje se jednim dodirom; upute kako trajno dopustiti lokaciju"],["🌓","Svijetla ili tamna tema","novi gumb gore: automatski prema mobitelu, uvijek svijetla ili uvijek tamna"],["🙏","Zasluge","popis autora fotografija na kojima je model učio, u podnožju aplikacije"]];
-  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 3.0</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
+  const L=[["📷","Prave fotografije za 900 vrsta","atlas sada ima fotografiju za gotovo svaku vrstu, uz ime autora i licencu"],["🎯","Raznolikiji kviz","stotine vrsta i parova zamjena, bez ponavljanja iz runde u rundu"],["🍳","Puni recepti","42 recepta za 20 najčešćih gljiva, s čišćenjem, čuvanjem i sigurnosnim napomenama"],["🧠","Vlastiti model za prepoznavanje","601 vrsta, učen na 155.000 fotografija; radi na mobitelu i bez interneta"],["❓","Pametnija pitanja","kod krasnica i mliječnica pita za okus, boju mlijeka i otisak spora"],["⚠️","Potreban oprez","jestive vrste koje imaju otrovnog dvojnika posebno su označene"],["📍","Moja mjesta","spremi parkirališta i mjesta s gljivama, preimenuj ih, podijeli ili pogledaj na karti"],["🧭","Kompas na iPhoneu","uključuje se jednim dodirom; upute kako trajno dopustiti lokaciju"],["🌓","Svijetla ili tamna tema","novi gumb gore: automatski prema mobitelu, uvijek svijetla ili uvijek tamna"],["🙏","Zasluge","popis autora fotografija na kojima je model učio, u podnožju aplikacije"]];
+  $("#sheet").innerHTML='<div class="sheet-bar"><span class="eyebrow">Gljive Hrvatske 3.2</span><span class="grab"></span><button class="close" id="closeSheet" aria-label="Zatvori">×</button></div><div class="d-sec" style="border-top:0"><h2 id="dName">Što je novo 🍄</h2><ul class="keyf">'+L.map(x=>'<li><strong>'+x[0]+' '+x[1]+'</strong><br><span class="small">'+x[2]+'</span></li>').join("")+'</ul><button type="button" class="btn" onclick="closeSheet()">Kreni</button></div>';
   store.set("gh-seen-ver",WHATSNEW_VER);
 }
 function zasluge(){
@@ -2370,7 +2370,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.1.1";
+const APP_VERSION="v3.2";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
