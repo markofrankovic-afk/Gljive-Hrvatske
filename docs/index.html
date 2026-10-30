@@ -193,6 +193,7 @@ dl.morph dd{margin:0;min-width:0}
 .note{border-radius:8px;padding:10px 12px;background:var(--surface-2)}
 .note.danger{background:var(--bad-bg);color:var(--ink);border-left:4px solid var(--bad)}
 .note.dead{background:var(--dead-bg);color:var(--dead)}
+.note.dead .chip,.note.danger .chip{color:var(--ink)}
 .look{display:flex;flex-wrap:wrap;gap:6px}
 .look button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center;text-align:left}
 .card img.art,.d-head img.art{object-fit:cover;display:block}
@@ -1540,6 +1541,9 @@ function byIdTmp(id){return S.find(x=>x.id===id)}
     if(/^(Aleuria|Peziza|Sarcoscypha|Scutellinia|Paxina|Caloscypha|Humaria|Geopora|Plectania|Pseudoplectania|Urnula|Disciotis|Discina|Tarzetta|Bulgaria|Sarcosphaera)$/.test(g))x.shape="cup";
     else if(/^(Morchella|Mitrophora)$/.test(g))x.shape="morel";
     else if(g==="Gyromitra")x.shape="brain"}})();
+/* 3.3: konkretna upozorenja za otrovne vrste koje model zamijeni s jestivima */
+(()=>{const n=byIdTmp("x-russula-nobilis");if(n){n.nap="Otrovna: izaziva jake probavne smetnje. Lako se zamijeni s jestivim crvenim krasnicama. Kušaj sićušan komadić i ispljuni: ova je ljuta. Crvene krasnice ne jedi bez potvrde determinatora.";n.tr=n.tr||["bukva"]}
+  const u=byIdTmp("x-tricholoma-ustale");if(u){u.nap="Otrovna vitezovka, raste uz bukvu: klobuk crvenkastosmeđ i ljepljiv, listići s hrđavosmeđim mrljama, okus gorak. Zamjenjuje se sa stoglavom srastenicom i drugim smeđim vitezovkama. Ne jedi bez potvrde determinatora.";u.tr=u.tr||["bukva"];u.ok=u.ok||undefined}})();
 
 /* Psihoaktivne gljive: samo radi prepoznavanja i izbjegavanja. Bez sezone, recepata i uputa za branje. */
 const PSI_NAP="Psihoaktivna gljiva (sadrži psilocibin). Branje, posjedovanje i dijeljenje zabranjeni su Zakonom o suzbijanju zlouporabe droga. Nije jestiva: može izazvati paniku, psihozu i nezgode, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama (Galerina) i sitnim gljivama roda Conocybe/Pholiotina.";
@@ -2370,7 +2374,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.2";
+const APP_VERSION="v3.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2815,7 +2819,10 @@ const PAIRS=[
  {a:["blagva"],b:["muhara"],k:"pp_blag",q:"Koje su boje listići i stručak?",oa:"Žuti, klobuk gladak",ob:"Bijeli, na klobuku bijele krpice"},
  {a:["mednjaca"],b:["galerina"],k:"pp_gal",q:"Kakve su gljive? Ostavi klobuk na papiru 2–3 sata za otisak spora.",oa:"Veći busen, otisak spora bijel",ob:"Sitne, smeđe, otisak spora hrđavosmeđ"},
  {a:["smrcak"],b:["hrcak"],k:"pp_smr",q:"Prereži gljivu uzdužno. Kako izgleda?",oa:"Klobuk sa saćastim udubinama, iznutra jedna šupljina",ob:"Klobuk naboran kao mozak, iznutra više komorica"},
- {a:["krasnica-zelena"],b:["pupavka"],k:"volva"}
+ {a:["krasnica-zelena"],b:["pupavka"],k:"volva"},
+ /* iz testa: otrovne vrste koje model zamijeni s jestivim */
+ {a:["jestiva-krasnica","x-russula-aurora","x-russula-paludosa"],b:["x-russula-nobilis"],k:"ok"},
+ {a:["stoglava-srastenica"],b:["x-tricholoma-ustale"],k:"pp_ust",q:"Kako rastu i kakvi su listići?",oa:"U gustom busenu, stručci srastaju u dnu; listići bjelkasti do sivkasti",ob:"Pojedinačno ili u skupini, ne srastaju; listići s hrđavosmeđim mrljama, okus gorak"}
 ];
 const PAIRQ=Object.fromEntries(PAIRS.filter(p=>p.q).map(p=>[p.k,p]));
 function pairSide(p,id){return p.a.includes(id)?"a":p.b.includes(id)?"b":null}
@@ -2850,6 +2857,7 @@ const ZAM_EXTRA={"x-leucopaxillus-giganteus":["x-clitocybe-phyllophila"],"krhka-
  "x-tricholoma-terreum":["tigrasta-vitezovka"],"x-tricholoma-scalpturatum":["tigrasta-vitezovka"],"x-tricholoma-argyraceum":["tigrasta-vitezovka"],
  "x-cortinarius-croceus":["koprenka"],"x-cortinarius-malicorius":["koprenka"],"x-ramaria-stricta":["otrovna-capica"],"x-clavulina-coralloides":["otrovna-capica"],
  "siva-maglenka":["rudoliska"],"sljivovaca":["rudoliska"],"sivkasta-sljivovaca":["rudoliska"],"krhka-brasnjaca":["rudoliska"],"x-paralepista-flaccida":["omphalotus"],
+ "stoglava-srastenica":["x-tricholoma-ustale"],"jestiva-krasnica":["x-russula-nobilis"],"x-russula-aurora":["x-russula-nobilis"],
  "x-inocybe-sindonia":["vlaknjaca","usiljena-cjepaca"],"x-inocybe-geophylla":["vlaknjaca"],"x-hebeloma-mesophaeum":["gorusicina-plavulja"]};
 for(const[k,v]of Object.entries(ZAM_EXTRA))if(byId[k]){const z=byId[k].zam||(byId[k].zam=[]);for(const id of v)if(byId[id]&&!z.includes(id))z.push(id)}
 const TREES={"vrganj":["smreka","jela","bukva"],"borov-vrganj":["bor","jela"],"ljetni-vrganj":["hrast","bukva","kesten"],"crni-vrganj":["hrast","kesten"],
@@ -2892,7 +2900,7 @@ function buildCandidates(preds){
   for(const g of GROUPS){const tot=g.reduce((a,id)=>a+(map.get(id)?map.get(id).p:0),0);if(tot<0.2)continue;
     for(const id of g){const s=byId[id];if(!s)continue;const c=map.get(id),floor=0.12*tot;if(c){c.w=Math.max(c.w,floor)}else map.set(id,{s,w:floor,p:0,model:false,grp:true})}}
   /* opasne zamjene vjerojatnih kandidata ulaze s malom početnom težinom */
-  for(const c of [...map.values()]){if(c.p<0.05)continue;for(const z of c.s.zam||[]){const zs=byId[z];if(zs&&!map.has(z))map.set(z,{s:zs,w:0.03,p:0,model:false})}}
+  for(const c of [...map.values()]){if(c.p<0.05)continue;for(const z of c.s.zam||[]){const zs=byId[z];if(!zs)continue;const e=map.get(z);if(!e)map.set(z,{s:zs,w:0.03,p:0,model:false});else if(["otrovna","smrtno"].includes(zs.st))e.w=Math.max(e.w,0.03)}}
   /* vrsta izvan atlasa iz roda s otrovnim vrstama: otrovne vrste tog roda ulaze kao moguće zamjene */
   for(const o of others){if(o.p<0.1)continue;for(const zs of TOXIC_BY_GENUS[genusOf(o.lat)]||[])if(!map.has(zs.id))map.set(zs.id,{s:zs,w:0.012,p:0,model:false})}
   return{cands:[...map.values()],others};
@@ -2928,10 +2936,14 @@ function pickQuestions(){
   /* kod sunčanica pitanje o prstenu je uvijek prvo: to je ključna razlika prema otrovnim dvojnicama */
   if(ans.rm===undefined&&live.some(c=>isParasol(c.s))){const i=qs.findIndex(q=>q.k==="rm");if(i>=0)qs.splice(i,1);qs.unshift({k:"rm",H:99,opts:["da","ne"]})}
   qs.sort((a,b)=>b.H-a.H);
+  /* krasnice: okus je prvo pravilo (blage se jedu, ljute ne), pa to pitanje ide prvo */
+  const lead0=LR.cands[0];
+  if(lead0&&genusOf(lead0.s.lat)==="russula"&&ans.ok===undefined&&LR.qa.ok===undefined){const i=qs.findIndex(q=>q.k==="ok");if(i>0)qs.unshift(qs.splice(i,1)[0])}
   /* opasni par među vodećim kandidatima: njegovo pitanje ide prvo */
   const lead=LR.cands.slice().sort((x,y)=>(y.score||y.w)-(x.score||x.w)).slice(0,4).filter(c=>c.w>=0.02).map(c=>c.s.id);
   for(const p of PAIRS){
-    if(!lead.some(id=>p.a.includes(id))||!lead.some(id=>p.b.includes(id)))continue;
+    const inB=lead.some(id=>p.b.includes(id))||LR.cands.some(c=>p.b.includes(c.s.id)&&["otrovna","smrtno"].includes(c.s.st)&&c.w>=0.01);
+    if(!lead.some(id=>p.a.includes(id))||!inB)continue;
     if(p.q){if(LR.qa[p.k]===undefined)qs.unshift({k:p.k,H:100,opts:["a","b"]})}
     else if(ans[p.k]===undefined&&LR.qa[p.k]===undefined){const i=qs.findIndex(q=>q.k===p.k);const q=i>=0?qs.splice(i,1)[0]:null;if(q)qs.unshift(Object.assign(q,{H:100}))}
   }
@@ -2941,30 +2953,41 @@ const QTEXT={ok:"Samo kod krasnica i mliječnica: odlomi mali komadić klobuka, 
 function optLabel(k,v){if(PAIRQ[k])return v==="a"?PAIRQ[k].oa:PAIRQ[k].ob;if(k==="ml")return ML_LABEL[v]||v;if(k==="ok")return OK_LABEL[v]||v;if(k==="rm")return v==="da"?"Da, klizi slobodno":"Ne, prirastao je";if(k==="mi")return MI_LABEL[v]||v;const q=KEY.find(x=>x.k===k);const o=q&&q.o.find(o=>String(o[0])===String(v));return o?o[1]:String(v).charAt(0).toUpperCase()+String(v).slice(1)}
 
 /* ---------- prikaz ---------- */
+const ROD_HR={russula:"krasnica",lactarius:"mliječnica",cortinarius:"koprenka",tricholoma:"vitezovka",amanita:"muhara ili pupavka",boletus:"vrganj",mycena:"šljemovka",entoloma:"rudoliska",inocybe:"cjepača",hygrocybe:"vlažnica",agaricus:"pečurka",lepiota:"štitarka",suillus:"sluzavac",lycoperdon:"puhara",pholiota:"ljuskavica",clitocybe:"grlašica",hebeloma:"plavulja",psathyrella:"slabunjavka",hygrophorus:"puževica",helvella:"hrčak",peziza:"zdjeličarka",morchella:"smrčak"};
+const simLabel=r=>r>=0.6?"visoka":r>=0.3?"srednja":"niska";
 function renderLocal(){
   applyAnswers();
   const top=LR.cands.filter(c=>c.rel>=0.04).slice(0,4);
   const danger=LR.cands.filter(c=>["otrovna","smrtno"].includes(c.s.st)&&c.rel>=0.01&&!top.includes(c));
   const best=LR.cands[0];
+  /* nesigurno: model nema jasan vodeći prijedlog ili su prva dva blizu */
+  const second=LR.cands[1];
+  const unsure=!best||LR.maxp<0.4||best.rel<0.35||(second&&second.rel>=0.6*best.rel);
+  /* rod umjesto vrste: kad vodeće vrste dijele rod, a nijedna nije jasno ispred */
+  let rodTxt="";
+  if(unsure&&best){const g=genusOf(best.s.lat),same=top.filter(c=>genusOf(c.s.lat)===g);const gm=same.reduce((a,c)=>a+c.rel,0);
+    if(same.length>=2&&gm>=0.45){const G=best.s.lat.split(" ")[0];rodTxt=(ROD_HR[g]?ROD_HR[g]+" (<span class=\"lat\">"+esc(G)+"</span>)":"rod <span class=\"lat\">"+esc(G)+"</span>")}}
   let h="";
+  if(rodTxt)h+='<div class="note"><strong>Vjerojatno '+rodTxt+', ali vrsta nije sigurna.</strong> Vrste ovog roda teško se razlikuju sa slike; odgovori na pitanja ispod ili odnesi gljivu determinatoru.</div>';
+  if(top.some(c=>genusOf(c.s.lat)==="cortinarius"&&c.rel>=0.1))h+='<div class="note dead"><strong>Moguća koprenka (Cortinarius).</strong> Koprenke se ne beru za jelo: među njima su smrtno otrovne vrste (npr. planinska koprenka) koje se sa slike ne mogu razlikovati od bezopasnih, a trovanje se javlja tek nakon nekoliko dana.</div>';
   const topOut=LR.others[0];
   if(topOut&&topOut.rel>=0.3)h+='<div class="note danger"><strong>Najvjerojatnije je vrsta koje nema u atlasu:</strong> <span class="lat">'+esc(topOut.lat)+'</span> ('+Math.round(topOut.rel*100)+' %). Ne oslanjaj se na vrste ispod; provjeri je u literaturi ili kod determinatora.</div>';
   const answered=Object.values(LR.qa).filter(v=>v!=="?").length;
   if(answered&&best&&(best.rel<0.25||!best.model))h+='<div class="note danger"><strong>Tvoji odgovori isključuju prvi prijedlog modela.</strong> Ispod su slične vrste iz atlasa: usporedi ih s gljivom, odgovori na preostala pitanja ili koristi ključ po obilježjima.</div>';
   if(LR.qa.rm==="ne"&&LR.cands.some(c=>isParasol(c.s)&&c.w>=0.05))h+='<div class="note danger"><strong>Nepomičan prsten: to vjerojatno nije sunčanica.</strong> Kod odraslih sunčanica prsten slobodno klizi po stručku. Ne jedi je dok je ne pregleda determinator; napravi i otisak spora (bijel ili zelenkast).</div>';
-  if(LR.maxp<0.35)h+='<div class="note">Model nije siguran (najveća vjerojatnost '+Math.round(LR.maxp*100)+' %). Snimi gljivu izbliza, odozdo i cijelu s dnom, pa pokušaj ponovno.</div>';
+  if(unsure&&!rodTxt)h+='<div class="note"><strong>Model nije siguran.</strong> Nijedna vrsta nije jasno ispred ostalih. Snimi gljivu izbliza, odozdo i cijelu s dnom, odgovori na pitanja ispod ili je odnesi determinatoru.</div>';
   if(top.some(c=>c.s.psi))h+='<div class="note dead"><strong>Moguća psihoaktivna vrsta.</strong> Takve su gljive zakonom zabranjene i nisu jestive, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama. Ne beri ih.</div>';
   if(top.some(c=>["otrovna","smrtno"].includes(c.s.st))||danger.length)h+='<div class="warnbar">Među mogućim vrstama ima otrovnih. Ne beri za jelo bez provjere uživo.</div>';
-  h+='<div class="note danger"><strong>Ovo je procjena sa slike, nije potvrda.</strong> Postotak pokazuje sličnost s fotografijama, ne sigurnost da je gljiva jestiva. Ne jedi ništa samo na temelju aplikacije: odnesi gljivu determinatoru.</div>';
-  h+='<span class="eyebrow">Najsličnije vrste</span>'+top.map(c=>'<div class="cand"><span class="conf num" title="sličnost">'+Math.round(c.rel*100)+' %<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+carePill(c.s)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
-  if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.kar[0]||"")+'</div>').join("");
+  h+='<div class="note danger"><strong>Ovo je procjena sa slike, nije potvrda.</strong> Oznaka sličnosti pokazuje koliko gljiva nalikuje fotografijama vrste, ne sigurnost da je jestiva. Ne jedi ništa samo na temelju aplikacije: odnesi gljivu determinatoru.</div>';
+  h+='<span class="eyebrow">'+(unsure?'Nisam siguran: moguće vrste':'Najsličnije vrste')+'</span>'+top.map(c=>'<div class="cand"><span class="conf" title="'+Math.round(c.rel*100)+' % sličnosti">'+simLabel(c.rel)+'<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+carePill(c.s)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
+  if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.nap&&!/^Izaziva trovanja/.test(c.s.nap)&&/zamijen|Zamjenjuje/.test(c.s.nap)?c.s.nap:(c.s.kar[0]||""))+'</div>').join("");
   const qs=pickQuestions().filter(q=>LR.qa[q.k]===undefined||true);
   if(qs.length){
     h+='<span class="eyebrow">Odgovori za točnije određivanje</span>'+qs.map(q=>'<div class="q"><strong>'+(PAIRQ[q.k]||q.H===100?'⚠️ ':'')+esc(PAIRQ[q.k]?PAIRQ[q.k].q:QTEXT[q.k])+'</strong><div class="qopts">'+q.opts.map(v=>'<button class="chip" data-lq="'+q.k+'" data-lv="'+esc(v)+'" aria-pressed="'+(LR.qa[q.k]===v)+'">'+esc(optLabel(q.k,v))+'</button>').join("")+'<button class="chip" data-lq="'+q.k+'" data-lv="?" aria-pressed="'+(LR.qa[q.k]==="?")+'">Ne znam</button></div></div>').join("");
   }
   if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+(LM.meta&&LM.meta.vlastiti?' % vjerojatnosti otpada na druge, manje slične vrste.':' % vjerojatnosti otpada na vrste kojih nema u atlasu.')+'</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
-  h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+(best?'<button class="btn ghost small" id="lmLog" data-sp="'+best.s.id+'">Zapiši u dnevnik</button>':'')+'</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+(best&&!unsure?'<button class="btn ghost small" id="lmLog" data-sp="'+best.s.id+'">Zapiši u dnevnik</button>':'')+'</div>';
   h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 155.000 fotografija s iNaturalista i Wikimedia Commonsa za 601 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
   $("#lmOut").innerHTML=h;
 }
