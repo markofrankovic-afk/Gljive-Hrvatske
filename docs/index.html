@@ -1544,6 +1544,11 @@ function byIdTmp(id){return S.find(x=>x.id===id)}
 /* 3.3: konkretna upozorenja za otrovne vrste koje model zamijeni s jestivima */
 (()=>{const n=byIdTmp("x-russula-nobilis");if(n){n.nap="Otrovna: izaziva jake probavne smetnje. Lako se zamijeni s jestivim crvenim krasnicama. Kušaj sićušan komadić i ispljuni: ova je ljuta. Crvene krasnice ne jedi bez potvrde determinatora.";n.tr=n.tr||["bukva"]}
   const u=byIdTmp("x-tricholoma-ustale");if(u){u.nap="Otrovna vitezovka, raste uz bukvu: klobuk crvenkastosmeđ i ljepljiv, listići s hrđavosmeđim mrljama, okus gorak. Zamjenjuje se sa stoglavom srastenicom i drugim smeđim vitezovkama. Ne jedi bez potvrde determinatora.";u.tr=u.tr||["bukva"];u.ok=u.ok||undefined}})();
+/* 3.3.1: miris i drveće vitezovki prema knjizi R. Božac (600 gljiva naših krajeva); T. fulvum: breza (opća literatura) */
+(()=>{const MI={"sivka":"bez","sapunasta-vitezovka":"sapun","x-tricholoma-sulphureum":"neugodan","x-tricholoma-argyraceum":"bez","b-tricholoma-flavovirens":"bez","b-tricholoma-albobrunneum":"brasno","b-tricholoma-virgatum":"bez"};
+  const TR={"svilenkasta-vitezovka":["bukva","hrast"],"sjenovita-vitezovka":["bukva","grab"],"x-tricholoma-scalpturatum":["smreka","bukva"],"x-tricholoma-terreum":["bor"],"x-tricholoma-argyraceum":["bor"],"b-tricholoma-tigrinum":["smreka","bukva"],"x-tricholoma-fulvum":["breza"]};
+  for(const[k,v]of Object.entries(MI)){const s=byIdTmp(k);if(s)s.mi=v}
+  for(const[k,v]of Object.entries(TR)){const s=byIdTmp(k);if(s)s.tr=v}})();
 
 /* Psihoaktivne gljive: samo radi prepoznavanja i izbjegavanja. Bez sezone, recepata i uputa za branje. */
 const PSI_NAP="Psihoaktivna gljiva (sadrži psilocibin). Branje, posjedovanje i dijeljenje zabranjeni su Zakonom o suzbijanju zlouporabe droga. Nije jestiva: može izazvati paniku, psihozu i nezgode, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama (Galerina) i sitnim gljivama roda Conocybe/Pholiotina.";
@@ -2374,7 +2379,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.3";
+const APP_VERSION="v3.3.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2879,7 +2884,7 @@ for(const[k,v]of Object.entries(MILK))if(byId[k])byId[k].ml=v;
 /* gljive s listićima bez mlijeka: odgovor "nema mlijeka" odmah isključuje mliječnice i rujnice */
 for(const x of S)if(x.hy==="listici"&&x.ml===undefined)x.ml="nema";
 if(byId["siva-krasnica"])byId["siva-krasnica"].tr=["bukva","jela","smreka"];
-const MI_LABEL={anis:"Anis ili badem",brasno:"Brašno, svježe tijesto",rotkvica:"Rotkvica ili hren",cesnjak:"Češnjak",voce:"Voće ili cvijeće",neugodan:"Neugodno (plin, fenol, riba…)",bez:"Bez posebnog mirisa"};
+const MI_LABEL={sapun:"Sapun",anis:"Anis ili badem",brasno:"Brašno, svježe tijesto",rotkvica:"Rotkvica ili hren",cesnjak:"Češnjak",voce:"Voće ili cvijeće",neugodan:"Neugodno (plin, fenol, riba…)",bez:"Bez posebnog mirisa"};
 const OK_LABEL={blag:"Blag, ne pecka",ljut:"Ljut ili pecka (pričekaj 10–20 sekundi)"};
 const ML_LABEL={"vod":"Vodenasto, gotovo prozirno","bij-roz":"Bijelo, meso polako poružiči","bij-lju":"Bijelo, meso poljubičasti","nema":"Nema mlijeka","nar":"Narančasto, ostaje narančasto","nar-crv":"Narančasto, za nekoliko minuta pocrveni","crv":"Odmah vinskocrveno","bij-zut":"Bijelo, brzo požuti","bij":"Bijelo"};
 const GENUS_ALIAS={pseudosperma:"inocybe",inosperma:"inocybe",leucocybe:"clitocybe",desarmillaria:"armillaria",infundibulicybe:"clitocybe"};
