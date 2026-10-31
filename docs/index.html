@@ -2379,7 +2379,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.4";
+const APP_VERSION="v3.5";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2966,7 +2966,8 @@ function slotBtn(i,txt,lbl){return '<p style="margin:.3em 0">'+txt+'</p><div sty
 function nextStep(top,danger,qs){
   const sl=(typeof slots!=="undefined"&&slots)||[],has=i=>!!sl[i],best=top[0];if(!best)return null;
   const g=genusOf(best.s.lat),gs=top.map(c=>genusOf(c.s.lat));
-  if(SMALL_BROWN.has(g)){if(g==="cortinarius")return null;return {html:'<p style="margin:.3em 0">Ovakve gljive (male smeđe gljive, cjepače, patuljice) ne mogu se pouzdano odrediti sa slike, a među njima su smrtno otrovne. <strong>Ne beri ih.</strong></p>'}}
+  if(SMALL_BROWN.has(g))return null;
+  if(has(0)&&has(1)&&has(2))return {final:true};
   const aman=gs.includes("amanita")||danger.some(c=>genusOf(c.s.lat)==="amanita");
   if(aman){if(!has(2))return {html:slotBtn(2,'Iskopaj gljivu cijelu (ne odreži je) i slikaj dno stručka: ima li vrećicu (vulvu)? To je najvažniji znak pupavki.','Slikaj dno stručka')};
     const q=qs.find(q=>q.k==="volva");if(q)return {q}}
@@ -2977,6 +2978,8 @@ function nextStep(top,danger,qs){
   if(!has(2))return {html:slotBtn(2,'Dodaj fotografiju prereza i dna stručka.','Slikaj prerez')};
   return null;
 }
+/* anonimni brojač (GoatCounter u PWA verziji): bez fotografija, lokacije i osobnih podataka */
+function lmEv(n){try{if(window.gcEv)window.gcEv(n)}catch(e){}}
 const simLabel=r=>r>=0.6?"visoka":r>=0.3?"srednja":"niska";
 function renderLocal(){
   applyAnswers();
@@ -2993,7 +2996,11 @@ function renderLocal(){
   let h="";
   const qs=pickQuestions();
   const step=unsure?nextStep(top,danger,qs):null;
-  const stepHtml=step?'<div style="margin-top:8px"><span class="eyebrow">Sljedeći korak</span>'+(step.q?qHtml(step.q):step.html)+'</div><p class="small" style="margin-top:6px">Ili odnesi gljivu determinatoru.</p>':'<p class="small" style="margin-top:6px">Odnesi gljivu determinatoru.</p>';
+  const stepHtml=step&&step.final?'<p style="margin-top:8px"><strong>Ni s tri fotografije model nije siguran.</strong> Ovo je najbolja procjena; odnesi gljivu determinatoru.</p>':step?'<div style="margin-top:8px"><span class="eyebrow">Sljedeći korak</span>'+(step.q?qHtml(step.q):step.html)+'</div><p class="small" style="margin-top:6px">Ili odnesi gljivu determinatoru.</p>':'<p class="small" style="margin-top:6px">Odnesi gljivu determinatoru.</p>';
+  /* male smeđe gljive: jasno „ne beri” na samom vrhu */
+  const mbg=top.slice(0,3).find(c=>{const gg=genusOf(c.s.lat);return c.rel>=0.08&&SMALL_BROWN.has(gg)&&gg!=="cortinarius"});
+  if(mbg)h+='<div class="note dead" style="font-size:1.05rem"><strong>☠️ Ne beri: ovakve gljive se ne mogu odrediti sa slike.</strong><br><span style="font-size:.95rem">Male smeđe gljive, cjepače i patuljice teško razlikuju i stručnjaci, a među njima su smrtno otrovne vrste.</span></div>';
+  if(!LR.ev){LR.ev=true;lmEv("ishod-"+(LR.nfoto||1)+"foto-"+(unsure?"nesiguran":simLabel(best?best.rel:0)));if(step&&step.html&&/data-lmslot="(\d)"/.test(step.html))lmEv("korak-slikaj-"+(step.html.includes('data-lmslot="1"')?"odozdo":"prerez"));if(mbg)lmEv("ishod-ne-beri")}
   if(rodTxt)h+='<div class="note"><strong>Vjerojatno '+rodTxt+', ali vrsta nije sigurna.</strong> Vrste ovog roda teško se razlikuju sa slike.'+stepHtml+'</div>';
   if(top.some(c=>genusOf(c.s.lat)==="cortinarius"&&c.rel>=0.1))h+='<div class="note dead"><strong>Moguća koprenka (Cortinarius).</strong> Koprenke se ne beru za jelo: među njima su smrtno otrovne vrste (npr. planinska koprenka) koje se sa slike ne mogu razlikovati od bezopasnih, a trovanje se javlja tek nakon nekoliko dana.</div>';
   const topOut=LR.others[0];
@@ -3009,7 +3016,7 @@ function renderLocal(){
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.nap&&!/^Izaziva trovanja/.test(c.s.nap)&&/zamijen|Zamjenjuje/.test(c.s.nap)?c.s.nap:(c.s.kar[0]||""))+'</div>').join("");
   const qrest=qs.filter(q=>!(step&&step.q&&step.q.k===q.k));
   if(qrest.length){
-    h+='<span class="eyebrow">'+(step&&step.q?'Ostala pitanja':'Odgovori za točnije određivanje')+'</span>'+qrest.map(qHtml).join("");
+    h+='<span class="eyebrow">'+(step&&step.final?'Ako želiš suziti izbor':step&&step.q?'Ostala pitanja':'Odgovori za točnije određivanje')+'</span>'+qrest.map(qHtml).join("");
   }
   if(LR.outRel>=0.1&&LR.outRel<0.4)h+='<p class="small">'+Math.round(LR.outRel*100)+(LM.meta&&LM.meta.vlastiti?' % vjerojatnosti otpada na druge, manje slične vrste.':' % vjerojatnosti otpada na vrste kojih nema u atlasu.')+'</p>';
   if(LR.others.some(o=>o.rel>=0.005))h+='<details'+(LR.outRel>=0.2?' open':'')+'><summary class="small">Vrste kojih nema u atlasu</summary><ul class="small">'+LR.others.filter(o=>o.rel>=0.005).slice(0,5).map(o=>'<li><span class="lat">'+esc(o.lat)+'</span> · '+Math.round(o.rel*100)+' %</li>').join("")+'</ul></details>';
@@ -3023,7 +3030,8 @@ async function runLocal(){
   try{
     const preds=await classify(photos.map(p=>p.file));
     const seen=preds.reduce((a,r)=>a+r.p,0);
-    LR=Object.assign(buildCandidates(preds),{qa:{},maxp:preds[0]?preds[0].p:0,restMass:Math.max(0,1-seen)});
+    LR=Object.assign(buildCandidates(preds),{qa:{},maxp:preds[0]?preds[0].p:0,restMass:Math.max(0,1-seen),nfoto:Math.min(3,photos.length),ev:false});
+    lmEv("prepoznaj-"+LR.nfoto+"foto");
     lmStatus("Gotovo. Rezultat ovisi o kvaliteti fotografije.");
     renderLocal();
   }catch(e){
@@ -3035,10 +3043,10 @@ function initLocal(){
   $("#lmRun").addEventListener("click",runLocal);
   $("#lmOut").addEventListener("click",e=>{
     const b=e.target.closest("[data-lq]");if(b&&LR){const k=b.dataset.lq,v=b.dataset.lv;if(LR.qa[k]===v)delete LR.qa[k];else LR.qa[k]=v;renderLocal();return}
-    if(e.target.id==="lmLog")prefillLog(e.target.dataset.sp);
+    if(e.target.id==="lmLog"){lmEv("dnevnik-iz-prepoznavanja");prefillLog(e.target.dataset.sp)}
     const sb=e.target.closest("[data-lmslot]");
     if(sb){const i=sb.dataset.lmslot,inp=document.querySelector('#drop .slot[data-slot="'+i+'"] '+(sb.dataset.lmsrc==="gal"?'.sb input:not([capture])':'.slot-cam input'));
-      if(inp){inp.addEventListener("change",()=>setTimeout(()=>{if(slots[+i]){lmStatus("Dodana fotografija, ponovno procjenjujem…");runLocal()}},300),{once:true});inp.click()}}
+      if(inp){inp.addEventListener("change",()=>setTimeout(()=>{if(slots[+i]){lmEv("korak-dodana-slika");lmStatus("Dodana fotografija, ponovno procjenjujem…");runLocal()}},300),{once:true});inp.click()}}
   });
   if(store.get("gh-model-ok",null))lmStatus("Model je preuzet na uređaj.");
   /* prepoznavanje radi samo lokalno, na uređaju */
