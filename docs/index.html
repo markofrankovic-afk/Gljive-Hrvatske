@@ -2379,7 +2379,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.5";
+const APP_VERSION="v3.6";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2775,15 +2775,20 @@ function softmax(a){let mx=-Infinity;for(const v of a)if(v>mx)mx=v;let s=0;const
 function lmViews(){return LM_OPTS.tta?(LM_OPTS.views||[{},{flip:1},{zoom:1.4},{zoom:0.85},{zoom:0.7}]):[{}]}
 async function classify(files){
   const{session,meta,labels}=await ensureModel();
-  let acc=null;const views=lmViews();
+  /* svaka fotografija: prosjek pogleda; više fotografija: množenje (geometrijska sredina), jer na nalazima
+     s dvije fotografije daje 2 boda veću točnost od prosjeka uz jednak broj sigurnih grešaka (studeni 2026.) */
+  let lg=null;const views=lmViews();
   for(const f of files){
-    const img=await loadImg(f);
+    const img=await loadImg(f);let one=null;
     for(const v of views){
       const out=await session.run({[session.inputNames[0]]:viewTensor(img,meta,v)});
       const T=meta.temperature||1,raw=out[session.outputNames[0]].data,p=softmax(T===1?raw:raw.map(v=>v/T));
-      if(!acc)acc=new Float32Array(p.length);for(let i=0;i<p.length;i++)acc[i]+=p[i]/(files.length*views.length);
+      if(!one)one=new Float64Array(p.length);for(let i=0;i<p.length;i++)one[i]+=p[i]/views.length;
     }
+    if(!lg)lg=new Float64Array(one.length);for(let i=0;i<one.length;i++)lg[i]+=Math.log(one[i]+1e-9)/files.length;
   }
+  let sum=0;const acc=new Float32Array(lg.length);for(let i=0;i<lg.length;i++){acc[i]=Math.exp(lg[i]);sum+=acc[i]}
+  for(let i=0;i<acc.length;i++)acc[i]/=sum;
   const idx=[...acc.keys()].sort((a,b)=>acc[b]-acc[a]).slice(0,20);
   return idx.map(i=>({lat:labels[i],p:acc[i],s:atlasFor(labels[i])}));
 }
@@ -3000,7 +3005,10 @@ function renderLocal(){
   /* male smeđe gljive: jasno „ne beri” na samom vrhu */
   const mbg=top.slice(0,3).find(c=>{const gg=genusOf(c.s.lat);return c.rel>=0.08&&SMALL_BROWN.has(gg)&&gg!=="cortinarius"});
   if(mbg)h+='<div class="note dead" style="font-size:1.05rem"><strong>☠️ Ne beri: ovakve gljive se ne mogu odrediti sa slike.</strong><br><span style="font-size:.95rem">Male smeđe gljive, cjepače i patuljice teško razlikuju i stručnjaci, a među njima su smrtno otrovne vrste.</span></div>';
-  if(!LR.ev){LR.ev=true;lmEv("ishod-"+(LR.nfoto||1)+"foto-"+(unsure?"nesiguran":simLabel(best?best.rel:0)));if(step&&step.html&&/data-lmslot="(\d)"/.test(step.html))lmEv("korak-slikaj-"+(step.html.includes('data-lmslot="1"')?"odozdo":"prerez"));if(mbg)lmEv("ishod-ne-beri")}
+  if(!LR.ev){LR.ev=true;lmEv("ishod-"+(LR.nfoto||1)+"foto-"+(unsure?"nesiguran":simLabel(best?best.rel:0)));
+    /* zašto nesiguran i koje su fotografije dodane (samo nazivi polja, bez slika) */
+    if(unsure&&best){if(LR.maxp<0.4)lmEv("razlog-niska-vjerojatnost");if(best.rel<0.35)lmEv("razlog-mala-prednost");if(second&&second.rel>=0.6*best.rel)lmEv("razlog-dvije-bliske")}
+    {const sl=(typeof slots!=="undefined"&&slots)||[];const nm=["odozgo","odozdo","prerez"].filter((x,i)=>sl[i]);if(nm.length)lmEv("slike-"+nm.join("+"))}if(step&&step.html&&/data-lmslot="(\d)"/.test(step.html))lmEv("korak-slikaj-"+(step.html.includes('data-lmslot="1"')?"odozdo":"prerez"));if(mbg)lmEv("ishod-ne-beri")}
   if(rodTxt)h+='<div class="note"><strong>Vjerojatno '+rodTxt+', ali vrsta nije sigurna.</strong> Vrste ovog roda teško se razlikuju sa slike.'+stepHtml+'</div>';
   if(top.some(c=>genusOf(c.s.lat)==="cortinarius"&&c.rel>=0.1))h+='<div class="note dead"><strong>Moguća koprenka (Cortinarius).</strong> Koprenke se ne beru za jelo: među njima su smrtno otrovne vrste (npr. planinska koprenka) koje se sa slike ne mogu razlikovati od bezopasnih, a trovanje se javlja tek nakon nekoliko dana.</div>';
   const topOut=LR.others[0];
