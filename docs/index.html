@@ -146,6 +146,7 @@ a.btn{display:inline-block;text-decoration:none}
 .tool-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .tool-btn.sos{background:var(--dead-bg);color:var(--dead);border-color:var(--dead-bg)}
 html.big body{font-size:19px}html.big{font-size:118%}
+#v-atlas.searching #weekWarn,#v-atlas.searching #fieldBar,#v-atlas.searching #carBar,#v-atlas.searching .season,#v-atlas.searching #regChips,#v-atlas.searching #stChips,#v-atlas.searching #treeChips{display:none}
 .weekwarn{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r);padding:10px 12px;background:var(--bad-bg);border-left:4px solid var(--bad)}
 .weekwarn .ww-x{margin-left:auto;border:0;background:none;font-size:1.1rem;line-height:1;color:var(--muted)}
 .fieldbar{display:flex;gap:6px 14px;flex-wrap:wrap}
@@ -1634,9 +1635,16 @@ function renderChips(){renderTreeChips();
   $("#regChips").innerHTML='<button class="chip" data-r="" aria-pressed="'+(!state.reg)+'">Cijela Hrvatska</button>'+Object.entries(REG).map(([k,v])=>'<button class="chip" data-r="'+k+'" aria-pressed="'+(state.reg===k)+'">'+v+'</button>').join("");
   $("#stChips").innerHTML=Object.entries(ST).map(([k,v])=>'<button class="chip" data-s="'+k+'" aria-pressed="'+state.st.has(k)+'">'+v+'</button>').join("")+'<button class="chip" data-s="rl" aria-pressed="'+!!state.rl+'">Crveni popis</button>';
 }
-function norm(x){return x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d")}
+function norm(x){return x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[đð]/g,"d")}
+/* pretraga: traži u cijelom atlasu (filtri se ne primjenjuju) i trpi jedno krivo slovo */
+function lev1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;if(a.length===b.length){const d=[];for(let i=0;i<a.length;i++)if(a[i]!==b[i])d.push(i);if(d.length===1)return true;return d.length===2&&d[1]===d[0]+1&&a[d[0]]===b[d[1]]&&a[d[1]]===b[d[0]]}const[x,y]=a.length<b.length?[a,b]:[b,a];for(let i=0;i<y.length;i++)if(x===y.slice(0,i)+y.slice(i+1))return true;return false}
+const normS=x=>norm(x).replace(/dj/g,"d");
+function searchRank(s,q){const t=normS(s.hr+" "+s.lat+" "+(s.alt||""));if(normS(s.hr).startsWith(q)||normS(s.lat).startsWith(q))return 0;if(t.includes(q))return 1;
+  if(q.length>=4){const ws=t.split(/[\s,;()]+/);const qw=q.split(/\s+/);if(qw.every(w=>w.length<3||ws.some(x=>x.includes(w)||(w.length>=4&&lev1(x,w)))))return 2}return -1}
 function filtered(){
   const q=norm(state.q.trim());
+  if(q){const q2=q.replace(/dj/g,"d");const r=[];for(const s of S){const k=searchRank(s,q2);if(k>=0)r.push([k,s])}return r.sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+  if(false){const r=[];for(const s of S){const k=searchRank(s,q);if(k>=0)r.push([k,s])}return r.sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
   const tr=state.tree?TREE_F[state.tree]:null;
   const tk=state.tree,tm=(typeof TREES!=="undefined")?TREES:{};
   return S.filter(s=>(!tr||tr[1].test(s.stan||"")||(tm[s.id]&&(tm[s.id].includes(tk)||(tk==="crnogorica"&&tm[s.id].some(x=>["smreka","jela","bor","ariš"].includes(x))))))&&(!state.rl||s.rl)&&(state.rl||!state.month||s.m.includes(state.month))&&(!state.reg||s.reg.includes(state.reg))&&(!state.st.size||state.st.has(s.st))&&(!q||norm(s.hr+" "+s.lat+" "+(s.alt||"")).includes(q)));
@@ -1645,7 +1653,10 @@ function cardHTML(s){
   return '<button class="card" data-id="'+s.id+'">'+art(s)+'<span class="meta"><span class="name'+(s.hr===s.lat?' lat-only':'')+'">'+esc(s.hr)+'</span><span class="lat">'+(s.hr===s.lat?'hrvatski naziv nije utvrđen':esc(s.lat))+'</span><span class="line">'+pill(s.st)+carePill(s)+(s.psi?'<span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(s.zast?'<span class="st st-otrovna">Zaštićena</span>':'')+(s.rl?'<span class="st st-rl" title="Crveni popis gljiva Hrvatske">Crveni popis '+s.rl+'</span>':'')+'<span>'+monthsTxt(s.m)+'</span></span></span></button>';
 }
 function renderList(){
-  const r=filtered();
+  const r=filtered();const q=state.q.trim();
+  $("#v-atlas").classList.toggle("searching",!!q);
+  if(q){$("#count").textContent="Pretraga u cijelom atlasu: "+r.length+" od "+S.length+" vrsta";
+    $("#list").innerHTML=r.length?r.map(cardHTML).join(""):'<div class="empty">Nema vrste „'+esc(q)+'”. Provjeri pravopis ili probaj latinski naziv.</div>';return}
   $("#count").textContent=r.length+" vrsta"+(state.tree?" ispod stabla: "+TREE_F[state.tree][0].toLowerCase()+" (prema opisu staništa)":"");
   $("#list").innerHTML=r.length?r.map(cardHTML).join(""):'<div class="empty">Nema vrsta za odabrane filtre.</div>';
 }
@@ -2379,7 +2390,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.6";
+const APP_VERSION="v3.6.1";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
