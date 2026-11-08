@@ -1,0 +1,46 @@
+name: Karte bez interneta (regije)
+on:
+  push:
+    branches: [main]
+    paths: ['karte/**', '.github/workflows/karte.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  karte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Alat pmtiles
+        run: |
+          URL=$(curl -s https://api.github.com/repos/protomaps/go-pmtiles/releases/latest | python3 -c "import json,sys;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if 'Linux_x86_64' in a['name']][0])")
+          curl -sL "$URL" -o p.tgz && tar xzf p.tgz pmtiles && ./pmtiles version
+      - name: Najnovija Protomaps karta svijeta
+        run: |
+          KEY=$(curl -s https://build-metadata.protomaps.dev/builds.json | python3 -c "import json,sys;b=json.load(sys.stdin);print(sorted(x['key'] for x in b)[-1])")
+          echo "IZVOR=https://build.protomaps.com/$KEY" >> $GITHUB_ENV
+          echo "Izvor: $KEY"
+      - name: Izrezi regije
+        run: |
+          mkdir -p out
+          python3 - <<'PY'
+          import json, os, subprocess
+          R = json.load(open('karte/regije.json'))
+          meta = {}
+          for k, r in R.items():
+              b = ','.join(str(x) for x in r['bbox'])
+              f = f'out/karta-{k}.pmtiles'
+              subprocess.run(['./pmtiles', 'extract', os.environ['IZVOR'], f, f'--bbox={b}', f'--maxzoom={r["maxzoom"]}', '--download-threads=4'], check=True)
+              meta[k] = dict(r, mb=round(os.path.getsize(f) / 1e6, 1), izvor=os.environ['IZVOR'].rsplit('/', 1)[-1])
+              print(k, meta[k]['mb'], 'MB')
+          json.dump(meta, open('out/karte.json', 'w'), ensure_ascii=False, indent=1)
+          PY
+          ls -la out
+      - name: Objavi
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: karte
+          name: Karte bez interneta
+          body: "Regionalne karte (OpenStreetMap, Protomaps) za aplikaciju Gljivarko. © OpenStreetMap contributors, ODbL."
+          prerelease: true
+          files: out/*

@@ -1,0 +1,11 @@
+{
+ "gk": {"naziv": "Gorski kotar", "bbox": [14.35, 45.15, 15.15, 45.60], "maxzoom": 15},
+ "li": {"naziv": "Lika", "bbox": [14.90, 44.30, 16.10, 45.20], "maxzoom": 15},
+ "sh": {"naziv": "Središnja Hrvatska", "bbox": [15.20, 45.10, 16.90, 46.00], "maxzoom": 15},
+ "za": {"naziv": "Zagorje", "bbox": [15.60, 45.90, 16.40, 46.40], "maxzoom": 15},
+ "me": {"naziv": "Međimurje i Podravina", "bbox": [16.20, 45.70, 17.90, 46.60], "maxzoom": 15},
+ "sl": {"naziv": "Slavonija i Baranja", "bbox": [17.20, 44.95, 19.45, 45.95], "maxzoom": 14},
+ "is": {"naziv": "Istra", "bbox": [13.45, 44.75, 14.35, 45.60], "maxzoom": 15},
+ "kv": {"naziv": "Kvarner i otoci", "bbox": [14.20, 44.40, 15.10, 45.40], "maxzoom": 15},
+ "da": {"naziv": "Dalmacija", "bbox": [14.90, 42.35, 18.60, 44.60], "maxzoom": 14}
+}
