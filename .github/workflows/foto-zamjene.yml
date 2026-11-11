@@ -1,0 +1,20 @@
+name: Zamjenske fotografije (kandidati)
+on:
+  push:
+    branches: [main]
+    paths: ['tools/foto-zamjene/**', '.github/workflows/foto-zamjene.yml']
+permissions:
+  contents: write
+jobs:
+  trazi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preuzmi kandidate s Wikimedia Commonsa
+        working-directory: tools/foto-zamjene
+        run: python3 fetch.py
+      - name: Spremi na granu foto-kandidati
+        run: |
+          mkdir /tmp/k && cp -r tools/foto-zamjene/out/. /tmp/k/
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan foto-kandidati && git rm -rfq . && cp -r /tmp/k/. . && git add -A && git commit -qm "Kandidati za zamjenske fotografije" && git push -f origin foto-kandidati
