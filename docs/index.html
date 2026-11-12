@@ -1618,7 +1618,7 @@ const pill=st=>'<span class="st st-'+st+'"><b aria-hidden="true">'+(ST_IC[st]||"
 /* jestiva vrsta koja ima otrovnog ili smrtno otrovnog dvojnika */
 const careTwins=s=>(["jestiva","uvjetno"].includes(s.st)?(s.zam||[]).map(z=>byId[z]).filter(z=>z&&["otrovna","smrtno"].includes(z.st)):[]);
 const carePill=s=>careTwins(s).length?'<span class="st st-oprez" title="Ima otrovnog dvojnika"><b aria-hidden="true">⚠</b>Potreban oprez</span>':'';
-const monthsTxt=m=>m.length===12?"cijele godine":MONTHS[m[0]-1]+"–"+MONTHS[m[m.length-1]-1];
+const monthsTxt=m=>!m||!m.length?"":m.length===12?"cijele godine":MONTHS[m[0]-1]+"–"+MONTHS[m[m.length-1]-1];
 
 /* ---------- atlas ---------- */
 const state={q:"",month:NOW,reg:null,st:new Set(),tree:null};
@@ -2390,7 +2390,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.6.1";
+const APP_VERSION="v3.6.2";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
