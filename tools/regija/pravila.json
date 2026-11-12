@@ -1,0 +1,162 @@
+{
+  "_opis": "Pravila branja po državama za odabir države u Gljivarku. Još nije spojeno u aplikaciju. Polje 'potvrdeno' kaže je li podatak provjeren u službenom tekstu propisa (true) ili samo u medijima/sekundarnim izvorima (false). Prije objave sve 'false' provjeriti; u aplikaciji uz nepotvrđene podatke pisati: 'Provjeri kod lokalnih vlasti'. Stanje istraživanja: 12. 11. 2026.",
+  "drzave": [
+    {
+      "kod": "HR",
+      "naziv": "Hrvatska",
+      "podnaslov": "Gljive Hrvatske",
+      "dnevna_kolicina": {"kg": 3, "tartufi_kg": 0.1, "tekst": "Do 3 kg gljiva dnevno po osobi; tartufa do 0,1 kg.", "potvrdeno": true},
+      "dozvola": {"potrebna": true, "tekst": "Dozvola Hrvatskih šuma je obavezna i besplatna; izdaje se online i vrijedi do 31. prosinca.", "link": "https://nsp-dozvola.hrsume.hr/", "potvrdeno": true},
+      "najmanje_velicine": [
+        {"skupina": "vrganji", "rodovi": ["Boletus"], "cm": 4, "mjera": "klobuk"},
+        {"skupina": "prosenjak", "rodovi": ["Leccinum"], "cm": 3.5, "mjera": "klobuk"},
+        {"skupina": "rujnice", "rodovi": ["Lactarius"], "cm": 3, "mjera": "klobuk"},
+        {"skupina": "lisičarka", "rodovi": ["Cantharellus"], "cm": 2, "mjera": "klobuk"},
+        {"skupina": "mrka trubača", "rodovi": ["Craterellus"], "cm": 1.5, "mjera": "klobuk"},
+        {"skupina": "smrčci", "rodovi": ["Morchella"], "cm": 4, "mjera": "visina"}
+      ],
+      "zasticene": {"tekst": "Pravilnik o strogo zaštićenim vrstama štiti više od 300 vrsta gljiva (npr. blagva, kraljevski vrganj). Postojeći podaci u aplikaciji (s.zast, Crveni popis).", "izvor_u_aplikaciji": true},
+      "kazne": {"tekst": "133–933 € za branje bez dozvole ili preko dopuštene količine; za strogo zaštićene vrste otprilike 930–4000 €.", "potvrdeno": true},
+      "hitno": {"opci": "112", "hitna": "194", "otrovanja": {"naziv": "Centar za kontrolu otrovanja, IMI Zagreb (0–24)", "tel": "+385 1 2348 342"}},
+      "regije": "postojećih 9 regija u aplikaciji",
+      "izvori": [
+        {"naziv": "Pravilnik o sakupljanju zavičajnih divljih vrsta (NN 114/2017)", "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2017_11_114_2663.html"}
+      ]
+    },
+    {
+      "kod": "SI",
+      "naziv": "Slovenija",
+      "podnaslov": "Gljive Slovenije",
+      "dnevna_kolicina": {"kg": 2, "tekst": "Do 2 kg gljiva dnevno po osobi. Iznimka: jedna gljiva teža od 2 kg smije se ponijeti.", "potvrdeno": true},
+      "dozvola": {"potrebna": false, "tekst": "Za osobne potrebe dozvola nije potrebna.", "potvrdeno": false},
+      "pravila_branja": [
+        "Beri samo gljive koje po vanjskim obilježjima sigurno prepoznaješ.",
+        "Zabranjeni su alati koji oštećuju tlo ili podgobje (micelij).",
+        "Gljive grubo očisti na mjestu nalaza.",
+        "Nosi ih samo u čvrstoj, prozračnoj ambalaži (košara)."
+      ],
+      "najmanje_velicine": [],
+      "najmanje_velicine_napomena": "Slovenski propis ne propisuje najmanju veličinu.",
+      "zasticene": {
+        "propis": "Uredba o zavarovanih prosto živečih vrstah gliv (Uradni list RS 58/2011)",
+        "tekst": "Zaštićene vrste zabranjeno je brati, uništavati ili prodavati.",
+        "zabranjene": ["Amanita caesarea", "Amanita strobiliformis", "Amanita verna", "Aureoboletus gentilis", "Boletus dupainii", "Boletus fragrans", "Boletus regius", "Boletus satanas", "Boletus torosus", "Bondarzewia montana", "Buchwaldoboletus hemichrysus", "Buchwaldoboletus lignicola", "Calvatia gigantea", "Camarops tubulina", "Catathelasma imperiale", "Clathrus ruber", "Cortinarius praestans", "Dentipellis fragilis", "Elaphocordyceps ophioglossoides", "Ganoderma lucidum", "Gomphus clavatus", "Grifola frondosa", "Hericium alpestre", "Hericium coralloides", "Hericium erinaceus", "Hymenochaete cruenta", "Laricifomes officinalis", "Leccinellum crocipodium", "Leptoporus mollis", "Leucopaxillus macrorhizus", "Leucopaxillus tricolor", "Mitrula paludosa", "Phylloporus rhodoxanthus", "Pluteus hispidulus", "Polyporus umbellatus", "Porphyrellus porphyrosporus", "Russula zvarae", "Tricholoma caligatum", "Verpa bohemica", "Verpa digitaliformis", "Vibrissea truncorum"],
+        "potvrdeno": false,
+        "napomena": "Popis od 41 vrste preuzet s popisa gobarskog društva prema UL 58/2011; provjeriti važeći tekst i izmjene na PISRS-u. Važno za korisnike: blagva (knežja mušnica), kraljevski vrganj, čokata žilolistka, velika zraščenka i ježevice (Hericium) su zabranjene."
+      },
+      "kazne": {"tekst": "Inspektori mogu izreći novčanu kaznu, a gljive ubrane protivno propisu oduzimaju se.", "iznos_eur": null, "potvrdeno": false, "napomena": "Iznos u eurima nije pronađen u službenom tekstu; stari propis (UL 57/98) navodi iznose u tolarima."},
+      "posebna_podrucja": {"tekst": "Triglavski nacionalni park ima posebna pravila (ZTNP-1); provjeriti zone u kojima je branje zabranjeno.", "potvrdeno": false},
+      "hitno": {"opci": "112", "hitna": "112", "otrovanja": {"naziv": "Center za klinično toksikologijo in farmakologijo, UKC Ljubljana", "tel": "+386 1 522 52 83", "napomena": "Nije potvrđeno radi li 0–24 i primaju li poziv građana; za hitne slučajeve uvijek 112.", "potvrdeno": false}},
+      "regije": ["Gorenjska", "Goriška", "Obalno-kraška", "Primorsko-notranjska", "Osrednjeslovenska", "Zasavska", "Savinjska", "Koroška", "Podravska", "Pomurska", "Posavska", "Jugovzhodna Slovenija"],
+      "lokalna_imena_primjeri": {"vrganj": "jurček", "lisičarka": "lisička", "sunčanica": "dežnik", "smrčak": "smrček", "zelena pupavka": "zelena mušnica"},
+      "izvori": [
+        {"naziv": "ARSO – Zavarovane samonikle glive", "url": "https://www.arso.gov.si/narava/rastlinske%20vrste/zavarovane%20glive/"},
+        {"naziv": "Uredba o varstvu samoniklih gliv (PISRS)", "url": "https://pisrs.si/Pis.web/pregledPredpisa?id=URED731"},
+        {"naziv": "Uredba o zavarovanih prosto živečih vrstah gliv (UL 58/2011)", "url": "https://www.uradni-list.si/glasilo-uradni-list-rs/vsebina/2011-01-2723/"},
+        {"naziv": "Gobarsko društvo Novo mesto – zavarovane glive", "url": "https://gdnm.si/zavarovane-glive/"},
+        {"naziv": "Lokalec.si, 30. 9. 2026. – inspektori i ograničenje 2 kg", "url": "https://www.lokalec.si/inspektorji-nad-gobarje-posameznik-lahko-na-dan-nabere-najvec-dva-kilograma-gob/"},
+        {"naziv": "Center za zastrupitve – kontakt", "url": "https://www.zastrupitve.net/center-za-klinicno-toksikologijo-in-farmakologijo/"}
+      ]
+    },
+    {
+      "kod": "BA",
+      "naziv": "Bosna i Hercegovina",
+      "podnaslov": "Gljive Bosne i Hercegovine",
+      "entiteti": true,
+      "napomena": "Pravila se razlikuju po entitetima (Federacija BiH, Republika Srpska), a kantoni u FBiH mogu imati vlastite propise. U aplikaciji ponuditi odabir entiteta ili prikazati oba.",
+      "dnevna_kolicina": {
+        "FBiH": {"kg": 1, "tekst": "Berač za osobne potrebe smije ubrati do 1 kg sporednih šumskih proizvoda (uključujući gljive); propis ne kaže je li to dnevno.", "potvrdeno": true},
+        "RS": {"kg": 2, "tekst": "Do 2 kg dnevno za osobne potrebe (povećano s 1 kg 2021.).", "potvrdeno": false}
+      },
+      "dozvola": {
+        "FBiH": {"tekst": "Branje za osobne potrebe je besplatno, ali propis traži prethodno odobrenje šumsko-privrednog društva za područje i vrijeme branja. Za veće količine plaća se naknada i treba otpremni iskaz.", "potvrdeno": true},
+        "RS": {"tekst": "Za osobne potrebe dozvola nije spomenuta; komercijalni otkup traži otpremni iskaz Šuma RS.", "potvrdeno": false}
+      },
+      "najmanje_velicine": [
+        {"skupina": "vrganji", "rodovi": ["Boletus"], "cm": 5, "mjera": "iznad tla", "vrijedi": "FBiH"},
+        {"skupina": "lisičarka", "rodovi": ["Cantharellus"], "cm": 3, "mjera": "iznad tla", "vrijedi": "FBiH"},
+        {"skupina": "smrčci", "rodovi": ["Morchella"], "cm": 3, "mjera": "iznad tla", "vrijedi": "FBiH"}
+      ],
+      "pravila_branja": ["Ostavi barem 20 % gljiva u skupini.", "Zabranjeno je vaditi i oštećivati micelij."],
+      "zasticene": {"tekst": "Vrganji, lisičarke, smrčci i blagva su pod kontrolom (FBiH); popis strogo zaštićenih gljiva nije pronađen.", "potvrdeno": false},
+      "kazne": {"tekst": "Iznosi kazni nisu pronađeni; nezakonito ubrane gljive mogu se oduzeti.", "potvrdeno": false},
+      "hitno": {"opci": "112", "hitna": "124", "otrovanja": {"naziv": null, "tel": null, "napomena": "Nacionalni centar za otrovanja nije pronađen; uputiti na 124 i najbližu bolnicu."}, "napomena": "112 se tek uvodi u cijeloj BiH; 124 je hitna pomoć."},
+      "regije": ["Bosanska krajina", "Posavina", "Središnja Bosna", "Sarajevo i okolica", "Podrinje", "Hercegovina"],
+      "izvori": [
+        {"naziv": "Pravilnik o uzgoju, iskorištavanju, sakupljanju i prometu sekundarnih šumskih proizvoda (Sl. novine FBiH 66/05)", "url": "https://faolex.fao.org/docs/pdf/bih148222.pdf"},
+        {"naziv": "Oslobođenje, 6. 12. 2020. – pravilnik RS (1 kg)", "url": "https://www.oslobodjenje.ba/vijesti/bih/na-snagu-danas-stupio-pravlink-ni-gljive-vise-ne-smijemo-brati-koliko-hocemo-610186/"},
+        {"naziv": "Mondo.ba, 14. 5. 2021. – RS povećala na 2 kg", "url": "https://mondo.ba/info/Ekonomija/a1044624/gljive-gljivarenje-pravilnik-republika-srpska-dva-kilograma.html"},
+        {"naziv": "EU u BiH – uvođenje broja 112", "url": "https://www.eeas.europa.eu/delegations/bosnia-and-herzegovina/uvo%C4%91enje-broja-za-hitne-slu%C4%8Dajeve-112-u-cijeloj-bosni-i-hercegovini-je-va%C5%BEno-za-bolju-koordinaciju_bs"}
+      ]
+    },
+    {
+      "kod": "RS",
+      "naziv": "Srbija",
+      "podnaslov": "Gljive Srbije",
+      "dnevna_kolicina": {"kg": null, "tekst": "Za osobne potrebe propis ne određuje dnevnu količinu. Komercijalno branje kontroliranih vrsta traži dozvolu Ministarstva zaštite životne sredine.", "potvrdeno": false},
+      "dozvola": {"potrebna": false, "tekst": "Za osobne potrebe dozvola nije propisana; za otkup i prodaju dozvolu dobivaju samo pravne osobe i poduzetnici.", "potvrdeno": false},
+      "najmanje_velicine": [
+        {"skupina": "vrganji", "rodovi": ["Boletus"], "cm": 4, "mjera": "promjer klobuka"},
+        {"skupina": "mliječnice / rujnice", "rodovi": ["Lactarius"], "cm": 4, "mjera": "promjer klobuka"},
+        {"skupina": "lisičarka", "rodovi": ["Cantharellus"], "cm": 2, "mjera": "promjer klobuka"},
+        {"skupina": "mrka truba", "rodovi": ["Craterellus"], "cm": 2, "mjera": "promjer klobuka"}
+      ],
+      "najmanje_velicine_napomena": "Prema Uredbi o stavljanju pod kontrolu korišćenja i prometa divlje flore i faune; vrijedi za kontrolirane vrste. Zabranjeni su i stari, truli, plijesnivi i crvljivi primjerci; na nalazištu ostaviti barem trećinu.",
+      "pravila_branja": ["Ostavi barem trećinu primjeraka na nalazištu.", "Tartufi samo od svitanja do sumraka, najviše jedan dresirani pas, rupe zatrpati."],
+      "zasticene": {
+        "propis": "Pravilnik o proglašenju i zaštiti strogo zaštićenih i zaštićenih divljih vrsta biljaka, životinja i gljiva (Sl. glasnik RS 5/2010, 47/2011, 32/2016, 98/2016)",
+        "tekst": "Strogo zaštićene vrste zabranjeno je brati.",
+        "zabranjene": ["Battarrea phalloides", "Amanita vittadinii", "Entoloma bloxamii", "Hygrocybe calyptriformis", "Hygrocybe coccineocrenata", "Hygrocybe punicea", "Hygrophorus marzuolus", "Rhodotus palmatus", "Panaeolus semiovatus", "Psilocybe serbica", "Catathelasma imperiale", "Leucopaxillus giganteus", "Boletus dupainii", "Boletus impolitus", "Boletus regius", "Boletus rhodoxanthus", "Boletus satanas", "Leccinellum crocipodium", "Phylloporus rhodoxanthus", "Strobilomyces strobilaceus", "Geastrum fornicatum", "Geastrum melanocephalum", "Geastrum schmidelii", "Myriostoma coliforme", "Sarcosphaera coronaria", "Mutinus caninus", "Phallus hadriani", "Fomitopsis rosea", "Podoscypha multizonata", "Hapalopilus croceus", "Polyporus umbellatus", "Albatrellus ovinus", "Hericium alpestre", "Hericium cirrhatum", "Hericium coralloides", "Hericium erinaceus", "Pycnoporellus alboluteus", "Scutiger pescaprae"],
+        "kontrolirane": ["Amanita caesarea", "Hygrophorus russula", "Marasmius oreades", "Boletus aereus", "Boletus edulis", "Boletus pinophilus", "Boletus reticulatus", "Cantharellus amethysteus", "Cantharellus cibarius", "Cantharellus cinereus", "Cantharellus friesii", "Craterellus cornucopioides", "Hydnum repandum", "Morchella elata", "Morchella esculenta", "Morchella vulgaris", "Tuber aestivum", "Tuber macrosporum", "Tuber magnatum", "Lactarius deliciosus", "Lactarius deterrimus", "Lactarius salmonicolor", "Lactarius sanguifluus"],
+        "potvrdeno": true,
+        "napomena": "Popis zaštićenih (kontroliranih) vrsta u izvoru je odrezan nakon Lactarius sanguifluus; dopuniti iz punog teksta. Zanimljivo: Leucopaxillus giganteus i Hygrophorus marzuolus su strogo zaštićeni."
+      },
+      "kazne": {"tekst": "Iznosi kazni nisu pronađeni u provjerenim izvorima.", "potvrdeno": false},
+      "hitno": {"opci": "112", "hitna": "194", "otrovanja": {"naziv": "Nacionalni centar za kontrolu trovanja, VMA Beograd", "tel": "+381 11 360 8440", "napomena": "Nije potvrđeno radi li 0–24.", "potvrdeno": false}},
+      "regije": ["Vojvodina", "Beograd", "Šumadija i Zapadna Srbija", "Južna i Istočna Srbija"],
+      "lokalna_imena_primjeri": {"gljiva": "pečurka", "vrganj": "vrganj", "lisičarka": "lisičarka", "sunčanica": "sunčanica", "mrka trubača": "mrka truba"},
+      "izvori": [
+        {"naziv": "Uredba o stavljanju pod kontrolu korišćenja i prometa divlje flore i faune (Sl. glasnik RS 31/2005 … 9/2010)", "url": "https://www.vojvodinasume.rs/wp-content/uploads/2012/04/Uredba-o-stavljanju-pod-kontrolu-koriscenja-i-prometa-divlje-flore-i-faune.pdf"},
+        {"naziv": "Pravilnik o proglašenju i zaštiti strogo zaštićenih i zaštićenih divljih vrsta (Ministarstvo zaštite životne sredine)", "url": "https://www.ekologija.gov.rs/sites/default/files/old-documents/I_Prirodni_resursi/1._Usvojeni_propisi/1.3._Pravilnici/PRAVILNIK-o-proglasenju-i-zastiti-zasticenih-vrsta.pdf"},
+        {"naziv": "Ozon Media, 2023. – dozvole samo za pravne osobe", "url": "https://www.ozon.rs/vesti/2023/zabranjeno-sakupljanje-puzeva-i-zaba-ne-bas-uvek-i-ne-svima/"},
+        {"naziv": "Danas, 3. 10. 2022. – VMA i broj centra za trovanja", "url": "https://www.danas.rs/vesti/drustvo/vma-upozorava-na-trovanje-pecurkama-kako-prepoznati-otrovnu-gljivu/"},
+        {"naziv": "Danas, 30. 4. 2025. – hitni brojevi", "url": "https://www.danas.rs/vesti/drustvo/vazni-brojevi-telefona/"}
+      ]
+    },
+    {
+      "kod": "ME",
+      "naziv": "Crna Gora",
+      "podnaslov": "Gljive Crne Gore",
+      "dnevna_kolicina": {"kg": 2, "tartufi_kg": 0.1, "tekst": "Branje više od 2 kg nadzemnih gljiva (ili 0,1 kg tartufa) dnevno smatra se komercijalnim i traži dozvolu i upis u registar; do toga se bere za osobne potrebe.", "potvrdeno": false, "napomena": "Ograničenje za osobne potrebe izvedeno iz praga za komercijalno branje (Pravilnik 2010.); provjeriti važi li nakon novog Zakona o zaštiti prirode (2016.)."},
+      "dozvola": {"potrebna": false, "tekst": "Za osobne potrebe (do 2 kg dnevno) dozvola nije propisana; za komercijalno branje treba dozvola i upis u Centralni registar.", "potvrdeno": false},
+      "najmanje_velicine": [
+        {"skupina": "vrganji", "rodovi": ["Boletus"], "cm": 4, "mjera": "promjer klobuka", "vise_od": true},
+        {"skupina": "ježevica", "rodovi": ["Hydnum"], "cm": 4, "mjera": "promjer klobuka", "vise_od": true},
+        {"skupina": "mliječnice / rujnice", "rodovi": ["Lactarius"], "cm": 4, "mjera": "promjer klobuka", "vise_od": true},
+        {"skupina": "lisičarka", "rodovi": ["Cantharellus"], "cm": 2, "mjera": "promjer klobuka", "vise_od": true},
+        {"skupina": "smrčak", "rodovi": ["Morchella"], "cm": 2, "mjera": "promjer klobuka", "vise_od": true},
+        {"skupina": "mrka truba", "rodovi": ["Craterellus"], "cm": 2, "mjera": "promjer klobuka", "vise_od": true}
+      ],
+      "pravila_branja": ["Gljivu zakreni, ne čupaj.", "Ne beri nezrele ni trule primjerke.", "Na nalazištu ostavi barem 25 % gljiva.", "Tartufi samo s dresiranim psom; rupe do 30 cm i zatrpati."],
+      "zasticene": {"tekst": "Popis zaštićenih vrsta gljiva u Crnoj Gori nije pronađen.", "potvrdeno": false},
+      "kazne": {"tekst": "Iznosi kazni nisu pronađeni.", "potvrdeno": false},
+      "hitno": {"opci": "112", "hitna": "124", "otrovanja": {"naziv": null, "tel": null, "napomena": "Centar za otrovanja nije pronađen; uputiti na 112/124 i Klinički centar Crne Gore."}},
+      "regije": ["Primorje", "Središnja Crna Gora", "Sjever"],
+      "izvori": [
+        {"naziv": "Pravilnik o bližem načinu i uslovima sakupljanja, korišćenja i prometa nezaštićenih divljih vrsta … gljiva (Sl. list CG 62/2010)", "url": "https://faolex.fao.org/docs/pdf/mne179340.pdf"},
+        {"naziv": "EKIP – Dan 112 (2023.)", "url": "https://ekip.me/media/documents/1676028022_Saopstenje_dan_112_feb_2023_(003).PDF"}
+      ]
+    }
+  ],
+  "za_nadogradnju": {
+    "sto_se_mijenja_po_drzavi": ["dnevna količina u košari i brojaču kg", "najmanje veličine u ravnalu i košari", "zaštićene/zabranjene vrste (oznaka u atlasu i upozorenje u košari)", "tekst o dozvoli i poveznica", "hitni brojevi i centar za otrovanja (SOS)", "popis regija (filtar, prognoza, dnevnik)", "gljivarska društva", "podnaslov aplikacije", "karte bez interneta (nove regije u karte/regije.json)"],
+    "otvorena_pitanja": [
+      "Lovna sezona po državama (postojeće upozorenje vrijedi za Hrvatsku).",
+      "Gljivarska društva u SI, BiH, RS i ME.",
+      "Popis strogo zaštićenih gljiva za BiH i Crnu Goru.",
+      "Iznosi kazni u SI, BiH, RS, ME.",
+      "Centri za otrovanja u BiH i Crnoj Gori; radno vrijeme centara u SI i RS.",
+      "Kantonska pravila u FBiH."
+    ]
+  }
+}
