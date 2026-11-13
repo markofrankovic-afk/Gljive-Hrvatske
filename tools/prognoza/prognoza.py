@@ -74,7 +74,7 @@ def read_grib(path):
             out[(sn, st)] = v[np.ix_(iy, ix)].astype(np.float32)
     return out
 
-SOURCES = ["azure", "google", "ecmwf", "aws"]
+SOURCES = ["google", "azure", "ecmwf", "aws"]
 def retrieve(source, date, steps, target, timeout=420):
     """Preuzimanje u zasebnom procesu s vremenskim ograničenjem (klijent inače ponavlja satima)."""
     import subprocess
@@ -233,7 +233,7 @@ def main():
             return d, None, "vrijeme"
         fn = "p_%s.grib2" % d.isoformat()
         try:
-            retrieve_any(d.strftime("%Y%m%d"), list(range(0, 25, 6)), fn, sources=["azure", "google", "aws"], timeout=240)
+            retrieve_any(d.strftime("%Y%m%d"), list(range(0, 25, 6)), fn, sources=["google", "azure", "aws"], timeout=240)
             v = day_values(read_grib(fn), 0); os.remove(fn); return d, v, None
         except Exception as e:
             return d, None, str(e)[:120]
