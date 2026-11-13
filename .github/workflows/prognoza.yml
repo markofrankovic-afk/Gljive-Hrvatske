@@ -27,7 +27,7 @@ jobs:
       - name: Prošla arhiva
         run: |
           mkdir -p /tmp/stara
-          git fetch -q origin prognoza-podaci && git show origin/prognoza-podaci:arhiva.npz > /tmp/stara/arhiva.npz || echo "nema arhive"
+          (git fetch -q origin prognoza-podaci && git show origin/prognoza-podaci:arhiva.npz > /tmp/stara/a.npz && mv /tmp/stara/a.npz /tmp/stara/arhiva.npz) || echo "nema arhive"
       - name: Izračun
         env:
           BUDGET_MIN: '30'

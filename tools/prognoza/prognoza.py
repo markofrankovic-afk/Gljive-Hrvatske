@@ -203,10 +203,13 @@ def scores(S, dates):
 def main():
     t0 = time.time()
     arh = {}
-    if ARH_IN and os.path.exists(ARH_IN):
-        z = np.load(ARH_IN)
-        arh = {k: z[k].astype(np.float32) for k in z.files}
-        log("arhiva:", len(arh), "dana")
+    if ARH_IN and os.path.exists(ARH_IN) and os.path.getsize(ARH_IN) > 100:
+        try:
+            z = np.load(ARH_IN)
+            arh = {k: z[k].astype(np.float32) for k in z.files}
+            log("arhiva:", len(arh), "dana")
+        except Exception as e:
+            log("arhiva nečitljiva:", e)
     # 1) današnja prognoza (ili jučerašnja ako današnja još nije objavljena)
     today = dt.datetime.now(dt.timezone.utc).date()
     steps = list(range(0, 24 * FUT + 1, 6))
