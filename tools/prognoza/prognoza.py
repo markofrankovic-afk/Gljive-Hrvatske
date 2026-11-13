@@ -14,6 +14,9 @@ Izlaz (u mapu OUT):
   arhiva.npz – grube dnevne vrijednosti po datumu (za sljedeći dan).
 """
 import base64, datetime as dt, io, json, math, os, sys, time, urllib.request
+from concurrent.futures import ThreadPoolExecutor
+T0 = time.time()
+BUDGET = float(os.environ.get("BUDGET_MIN", "35")) * 60
 import numpy as np
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "out"
@@ -34,7 +37,7 @@ OUT_PAST = 14
 DRZAVE = {"HRV", "SVN", "BIH", "SRB", "MNE", "KOS", "XKX"}
 
 def log(*a):
-    print(*a, flush=True)
+    print("[%5.0fs]" % (time.time() - T0), *a, flush=True)
 
 def get(url, tries=4):
     for i in range(tries):
@@ -88,6 +91,8 @@ def day_values(F, k):
     tp1 = F[("tp", s1)]; tp0 = F[("tp", s0)] if s0 > 0 else 0
     P = np.clip((tp1 - tp0) * 1000.0, 0, None)
     ts = [F[("2t", s)] - 273.15 for s in range(s0, s1 + 1, 3) if ("2t", s) in F]
+    if not ts:
+        raise KeyError("2t %d-%d" % (s0, s1))
     T = np.stack(ts)
     return np.stack([P, T.mean(0), T.min(0), T.max(0)]).astype(np.float32)
 
@@ -192,21 +197,18 @@ def main():
         log("arhiva:", len(arh), "dana")
     # 1) današnja prognoza (ili jučerašnja ako današnja još nije objavljena)
     today = dt.datetime.utcnow().date()
-    steps = list(range(0, 145, 3)) + list(range(150, 24 * FUT + 1, 6))
+    steps = list(range(0, 24 * FUT + 1, 6))
     run = None
     for back in (0, 1):
         d = today - dt.timedelta(days=back)
-        try:
-            retrieve("ecmwf", d.strftime("%Y%m%d"), steps, "fc.grib2"); run = d; break
-        except Exception as e:
-            log("prognoza za", d, "nije dostupna:", e)
-    if run is None:
-        for back in (0, 1):
-            d = today - dt.timedelta(days=back)
+        for src in ("aws", "ecmwf"):
             try:
-                retrieve("aws", d.strftime("%Y%m%d"), steps, "fc.grib2"); run = d; break
+                log("preuzimam prognozu", d, src)
+                retrieve(src, d.strftime("%Y%m%d"), steps, "fc.grib2"); run = d; break
             except Exception as e:
-                log("AWS prognoza za", d, "nije dostupna:", e)
+                log("prognoza", d, src, "nije dostupna:", e)
+        if run:
+            break
     if run is None:
         raise SystemExit("nema prognoze")
     F = read_grib("fc.grib2"); os.remove("fc.grib2")
@@ -214,15 +216,23 @@ def main():
     arh[run.isoformat()] = fut[0]
     log("prognoza", run, "%.0fs" % (time.time() - t0))
     # 2) prošli dani: popuni praznine iz AWS arhive
-    for back in range(PAST, 0, -1):
-        d = run - dt.timedelta(days=back); key = d.isoformat()
-        if key in arh:
-            continue
+    todo = [run - dt.timedelta(days=b) for b in range(1, PAST + 1) if (run - dt.timedelta(days=b)).isoformat() not in arh]
+    def fill(d):
+        if time.time() - T0 > BUDGET:
+            return d, None, "vrijeme"
+        fn = "p_%s.grib2" % d.isoformat()
         try:
-            retrieve("aws", d.strftime("%Y%m%d"), list(range(0, 25, 3)), "p.grib2")
-            arh[key] = day_values(read_grib("p.grib2"), 0); os.remove("p.grib2"); log("  dopunjeno", key)
+            retrieve("aws", d.strftime("%Y%m%d"), list(range(0, 25, 6)), fn)
+            v = day_values(read_grib(fn), 0); os.remove(fn); return d, v, None
         except Exception as e:
-            log("  nedostaje", key, e)
+            return d, None, str(e)[:120]
+    log("dopunjavam", len(todo), "dana")
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for d, v, err in ex.map(fill, todo):
+            if v is not None:
+                arh[d.isoformat()] = v; log("  dopunjeno", d)
+            else:
+                log("  nedostaje", d, err)
     # zadrži 40 dana
     for k in sorted(arh)[:-40]:
         del arh[k]
@@ -242,8 +252,8 @@ def main():
         seq.append(v)
     G = np.stack(seq, 1)                        # [4, dana, clat, clon]
     # 3) fina mreža, visine, maska
-    zf, zc = dem_fine_and_coarse()
-    mask = country_mask()
+    log("visine…"); zf, zc = dem_fine_and_coarse()
+    log("maska…"); mask = country_mask(); log("ocjene…")
     FG = bilinear(G)                            # [4, dana, R, C]
     zci = bilinear(zc[None])[0]
     lapse = (-0.0065 * (zf - zci))[None, None]

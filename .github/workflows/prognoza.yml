@@ -14,7 +14,7 @@ concurrency:
 jobs:
   prognoza:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,8 +29,14 @@ jobs:
           mkdir -p /tmp/stara
           git fetch -q origin prognoza-podaci && git show origin/prognoza-podaci:arhiva.npz > /tmp/stara/arhiva.npz || echo "nema arhive"
       - name: Izračun
-        run: python3 tools/prognoza/prognoza.py /tmp/out /tmp/stara/arhiva.npz
+        env:
+          BUDGET_MIN: '40'
+        run: |
+          mkdir -p /tmp/out
+          python3 -u tools/prognoza/prognoza.py /tmp/out /tmp/stara/arhiva.npz 2>&1 | tee /tmp/out/log.txt
+          test -f /tmp/out/prognoza.json
       - name: Objava na granu prognoza-podaci
+        if: always()
         run: |
           cd /tmp/out
           git init -q -b prognoza-podaci
