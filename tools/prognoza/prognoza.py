@@ -74,16 +74,28 @@ def read_grib(path):
             out[(sn, st)] = v[np.ix_(iy, ix)].astype(np.float32)
     return out
 
-def retrieve(source, date, steps, target):
-    from ecmwf.opendata import Client
-    last = None
-    for i in range(3):
+SOURCES = ["azure", "google", "ecmwf", "aws"]
+def retrieve(source, date, steps, target, timeout=420):
+    """Preuzimanje u zasebnom procesu s vremenskim ograničenjem (klijent inače ponavlja satima)."""
+    import subprocess
+    code = ("from ecmwf.opendata import Client;"
+            "Client(source=%r).retrieve(date=%r,time=0,type='fc',stream='oper',step=%r,param=['2t','tp'],target=%r)" % (source, date, steps, target))
+    try:
+        p = subprocess.run([sys.executable, "-c", code], timeout=timeout, capture_output=True, text=True)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("isteklo vrijeme (%s)" % source)
+    if p.returncode != 0 or not os.path.exists(target) or os.path.getsize(target) < 1000:
+        raise RuntimeError("%s: %s" % (source, (p.stderr or "").strip().splitlines()[-1:] or "?"))
+
+def retrieve_any(date, steps, target, sources=None, timeout=420):
+    errs = []
+    for src in (sources or SOURCES):
+        t = time.time()
         try:
-            Client(source=source).retrieve(date=date, time=0, type="fc", stream="oper", step=steps, param=["2t", "tp"], target=target)
-            return
+            retrieve(src, date, steps, target, timeout); log("   ", date, "iz", src, "%.0fs" % (time.time() - t)); return src
         except Exception as e:
-            last = e; log("  ponavljam ECMWF", source, date, e); time.sleep(10 + 10 * i)
-    raise last
+            errs.append(str(e)[:150]); log("   ", date, src, "ne ide:", str(e)[:150])
+    raise RuntimeError("; ".join(errs))
 
 def day_values(F, k):
     """Dan k (UTC, 0 = dan pokretanja): kiša mm, Tsr, Tmin, Tmax (°C) na gruboj mreži."""
@@ -196,19 +208,15 @@ def main():
         arh = {k: z[k].astype(np.float32) for k in z.files}
         log("arhiva:", len(arh), "dana")
     # 1) današnja prognoza (ili jučerašnja ako današnja još nije objavljena)
-    today = dt.datetime.utcnow().date()
+    today = dt.datetime.now(dt.timezone.utc).date()
     steps = list(range(0, 24 * FUT + 1, 6))
     run = None
     for back in (0, 1):
         d = today - dt.timedelta(days=back)
-        for src in ("aws", "ecmwf"):
-            try:
-                log("preuzimam prognozu", d, src)
-                retrieve(src, d.strftime("%Y%m%d"), steps, "fc.grib2"); run = d; break
-            except Exception as e:
-                log("prognoza", d, src, "nije dostupna:", e)
-        if run:
-            break
+        try:
+            log("preuzimam prognozu", d); retrieve_any(d.strftime("%Y%m%d"), steps, "fc.grib2", timeout=600); run = d; break
+        except Exception as e:
+            log("prognoza", d, "nije dostupna:", e)
     if run is None:
         raise SystemExit("nema prognoze")
     F = read_grib("fc.grib2"); os.remove("fc.grib2")
@@ -222,12 +230,12 @@ def main():
             return d, None, "vrijeme"
         fn = "p_%s.grib2" % d.isoformat()
         try:
-            retrieve("aws", d.strftime("%Y%m%d"), list(range(0, 25, 6)), fn)
+            retrieve_any(d.strftime("%Y%m%d"), list(range(0, 25, 6)), fn, sources=["azure", "google", "aws"], timeout=240)
             v = day_values(read_grib(fn), 0); os.remove(fn); return d, v, None
         except Exception as e:
             return d, None, str(e)[:120]
     log("dopunjavam", len(todo), "dana")
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=4) as ex:
         for d, v, err in ex.map(fill, todo):
             if v is not None:
                 arh[d.isoformat()] = v; log("  dopunjeno", d)
@@ -267,7 +275,7 @@ def main():
     P = np.clip(np.round(FG[0][days][:, rr, cc]), 0, 255).astype(np.uint8).T          # [polja, 22]
     def t8(a): return np.clip(np.round(a[days][:, rr, cc] * 2), -127, 127).astype(np.int8).T
     out = {
-        "v": 1, "d0": run.isoformat(), "made": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
+        "v": 1, "d0": run.isoformat(), "made": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         "grid": {"lat0": FLAT0, "lon0": FLON0, "d": FD, "rows": FROWS, "cols": FCOLS},
         "past": OUT_PAST, "fut": FUT, "groups": GRUPE, "pastHave": have, "pastNeed": PAST, "n": int(len(idx)),
         "cells": b64(idx), "elev": b64(np.round(zf[rr, cc]).astype(np.uint16)),
