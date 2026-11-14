@@ -19,6 +19,7 @@ jobs:
         run: |
           for id in $(gh api "repos/$R/actions/artifacts?per_page=100" --paginate -q '.artifacts[].id'); do gh api -X DELETE "repos/$R/actions/artifacts/$id" && echo "obrisan $id"; done
       - name: Obriši zapise starih Android i test izrada
+        continue-on-error: true
         run: |
           for wf in android.yml test-karta.yml; do
             for id in $(gh api "repos/$R/actions/workflows/$wf/runs?per_page=100" --paginate -q '.workflow_runs[].id' 2>/dev/null); do gh api -X DELETE "repos/$R/actions/runs/$id" >/dev/null && echo "obrisan run $id"; done
