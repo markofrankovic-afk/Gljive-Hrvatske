@@ -1,0 +1,29 @@
+name: Jednokratno čišćenje (Android premješten u privatni repozitorij)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ciscenje.yml']
+permissions:
+  contents: write
+  actions: write
+jobs:
+  ciscenje:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - name: Obriši izdanje s probnim APK-om
+        run: gh release delete android-proba --repo "$R" --yes --cleanup-tag || echo "nema izdanja"
+      - name: Obriši spremljene datoteke izrada (artifacts)
+        run: |
+          for id in $(gh api "repos/$R/actions/artifacts?per_page=100" --paginate -q '.artifacts[].id'); do gh api -X DELETE "repos/$R/actions/artifacts/$id" && echo "obrisan $id"; done
+      - name: Obriši zapise starih Android i test izrada
+        run: |
+          for wf in android.yml test-karta.yml; do
+            for id in $(gh api "repos/$R/actions/workflows/$wf/runs?per_page=100" --paginate -q '.workflow_runs[].id' 2>/dev/null); do gh api -X DELETE "repos/$R/actions/runs/$id" >/dev/null && echo "obrisan run $id"; done
+          done
+      - name: Provjera
+        run: |
+          gh release list --repo "$R"
+          echo "artifacts: $(gh api repos/$R/actions/artifacts -q .total_count)"
