@@ -8,6 +8,7 @@ on:
     paths: ['tools/prognoza/**', '.github/workflows/prognoza.yml']
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: prognoza
   cancel-in-progress: false
@@ -44,3 +45,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A && git commit -qm "Prognoza $(date -u +%F)"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" prognoza-podaci
+      - name: Održavanje rasporeda (GitHub gasi zakazane poslove nakon 60 dana bez aktivnosti)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/prognoza.yml/enable" && echo "Raspored potvrđen"
