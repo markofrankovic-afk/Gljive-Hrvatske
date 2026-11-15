@@ -226,6 +226,8 @@ dl.morph dd{margin:0;min-width:0}
 .pastebox{width:100%;min-height:52px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:12px;text-align:center;color:var(--muted);font-size:.9rem;overflow:hidden;-webkit-user-select:text;user-select:text}
 .pastebox:empty::before{content:"Ovdje zalijepi fotografiju"}
 .pastebox:focus{outline:2px solid var(--accent);outline-offset:1px}
+.photo-tips{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+#lmHint{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .slot{position:relative;display:flex;flex-direction:column;border:2px dashed var(--line);border-radius:var(--r);background:var(--bg);overflow:hidden;cursor:pointer;min-height:150px}
 .slot.over,.slots.over .slot{border-color:var(--accent)}
@@ -328,13 +330,15 @@ form.log .full{grid-column:1/-1}
     <div class="warnbar">Prepoznavanje sa slike je pomoć, nikad dokaz. Ne jedi gljivu dok je ne potvrdi iskusni determinator uživo.</div>
     <div class="panel">
       <h2>1. Fotografiraj gljivu u tri koraka</h2>
-      <p class="small">Dodirni polje ili „Slikaj” za kameru, a „Galerija” za već snimljene slike. Drugi i treći korak najviše pomažu: donja strana razlikuje listiće od cjevčica, a prerez pokazuje mijenja li meso boju i pušta li mlijeko.</p>
+      <p class="small">Dodirni polje ili „Slikaj” za kameru, a „Galerija” za već snimljene slike.</p>
+      <ul class="photo-tips small"><li>Cijela gljiva u kadru i oštra, bez prstiju preko klobuka.</li><li>Dnevno svjetlo, bez bljeskalice i bez jake sjene.</li><li>Jedna gljiva na slici, mirna pozadina: list, mahovina ili dlan.</li><li><strong>Dodaj i donju stranu.</strong> S dvije fotografije sigurne greške su upola rjeđe; prerez pokazuje mijenja li meso boju.</li></ul>
       <div class="slots" id="drop">
         <div class="slot" data-slot="0"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="0" aria-label="Korak 1: klobuk odozgo – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>1. Odozgo</strong><span>klobuk, cijela gljiva u kadru</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="0" aria-label="Korak 1: klobuk odozgo – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="0" aria-label="Korak 1: klobuk odozgo – odaberi iz galerije"></label></div></div>
         <div class="slot" data-slot="1"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="1" aria-label="Korak 2: donja strana – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>2. Odozdo</strong><span>listići, cjevčice ili bodlje</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="1" aria-label="Korak 2: donja strana – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="1" aria-label="Korak 2: donja strana – odaberi iz galerije"></label></div></div>
         <div class="slot" data-slot="2"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>3. Prerez i dno</strong><span>uzdužno prerezana, s dnom stručka</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="2" aria-label="Korak 3: prerez i dno – odaberi iz galerije"></label></div></div>
       </div>
       <span class="small" id="dropHint"></span>
+      <div class="note" id="photoWarn" hidden></div>
       <details class="small"><summary>Ne otvara se odabir fotografije?</summary>
         <p>Kopiraj fotografiju u galeriji, zatim dugo pritisni polje ispod i odaberi Zalijepi. Slika ide u prvi prazan korak.</p>
         <div class="pastebox" id="pasteBox" contenteditable="true" role="textbox" aria-label="Zalijepi fotografiju" inputmode="none"></div>
@@ -350,7 +354,7 @@ form.log .full{grid-column:1/-1}
       <div class="list" id="keyList"></div>
     </div>
 
-    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model prepoznaje 601 vrstu iz atlasa. Preuzme se jednom (oko 34 MB), nakon toga radi i bez interneta, u šumi.</p><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="panel" id="lmPanel"><h2>3. Prepoznaj sa slike</h2><p class="small">Besplatno i bez računa. Model prepoznaje 601 vrstu iz atlasa. Preuzme se jednom (oko 34 MB), nakon toga radi i bez interneta, u šumi.</p><div class="note" id="lmHint" hidden><span>Imaš samo jednu fotografiju. Dodaj donju stranu: s dvije fotografije sigurne greške su upola rjeđe.</span> <button type="button" class="btn ghost small" id="lmHintBtn">Slikaj odozdo</button></div><div><button class="btn" id="lmRun">Prepoznaj gljivu</button></div><p class="small" id="lmStatus"></p><div id="lmOut" style="display:flex;flex-direction:column;gap:10px"></div></div>
     <div class="panel" id="aiPanel" hidden>
       <h2>3. Analiza slike</h2>
       <div id="aiUnavailable" class="note" hidden>Analiza slike trenutno nije dostupna.</div>
@@ -1730,12 +1734,37 @@ function renderThumbs(){
   const n=slots.filter(Boolean).length;
   $("#dropHint").textContent=n?("Dodano "+n+" od 3. "+(n<3?"Što više koraka, to točnije prepoznavanje.":"")):"";
   $("#analyze").disabled=!(photos.length&&sample&&imgOK);
+  photoWarnings();
   if(window.onPhotosChange)window.onPhotosChange();
 }
+/* provjera fotografije: tamna ili mutna (na umanjenoj slici, ništa se ne šalje) */
+function photoCheck(s){
+  const img=new Image();img.onload=()=>{try{
+    const W=256,k=W/Math.max(img.width,img.height),w=Math.max(8,Math.round(img.width*k)),hh=Math.max(8,Math.round(img.height*k));
+    const c=document.createElement("canvas");c.width=w;c.height=hh;const g=c.getContext("2d");g.drawImage(img,0,0,w,hh);
+    const d=g.getImageData(0,0,w,hh).data,L=new Float32Array(w*hh);let sum=0;
+    for(let i=0;i<w*hh;i++){L[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];sum+=L[i]}
+    const mean=sum/(w*hh);let m=0,m2=0,n=0;
+    for(let y=1;y<hh-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,v=4*L[i]-L[i-1]-L[i+1]-L[i-w]-L[i+w];m+=v;m2+=v*v;n++}
+    const lap=n?(m2/n-(m/n)*(m/n)):999;
+    s.q={dark:mean<45,blur:mean>=45&&lap<18,small:Math.min(img.width,img.height)<300};
+    if(s.q.dark)lmEv("foto-tamna");if(s.q.blur)lmEv("foto-mutna");if(s.q.small)lmEv("foto-mala");
+    renderThumbs();
+  }catch(e){}};img.src=s.url}
+function photoWarnings(){
+  const el=$("#photoWarn");if(!el)return;const msgs=[];
+  slots.forEach((s,i)=>{if(!s||!s.q)return;const k=["Prva","Druga","Treća"][i];
+    if(s.q.dark)msgs.push(k+" fotografija je tamna: slikaj na dnevnom svjetlu, bez sjene.");
+    else if(s.q.blur)msgs.push(k+" fotografija je možda mutna: drži mobitel mirno i dodirni gljivu na zaslonu za izoštravanje.");
+    else if(s.q.small)msgs.push(k+" fotografija je vrlo mala: priđi bliže ili odaberi veću sliku.")});
+  el.hidden=!msgs.length;el.innerHTML=msgs.map(x=>"<div>"+esc(x)+"</div>").join("");
+  const hint=$("#lmHint");if(hint)hint.hidden=!(slots.filter(Boolean).length===1&&!slots[1]);
+}
+document.addEventListener("click",e=>{if(e.target&&e.target.id==="lmHintBtn"){lmEv("savjet-odozdo-klik");const inp=document.querySelector('.slot[data-slot="1"] .slot-cam input');if(inp)inp.click()}});
 function addFiles(list,slot){
   for(const f of list){if(f.type&&!f.type.startsWith("image/"))continue;
     let i=(slot!==undefined&&slot!==null)?slot:slots.findIndex(x=>!x);if(i<0)break;
-    if(slots[i])URL.revokeObjectURL(slots[i].url);slots[i]={file:f,url:URL.createObjectURL(f)};slot=null}
+    if(slots[i])URL.revokeObjectURL(slots[i].url);slots[i]={file:f,url:URL.createObjectURL(f)};photoCheck(slots[i]);slot=null}
   renderThumbs();
 }
 /* Lijepljenje slike: zaobilazi preglednike u kojima se odabir datoteke ne otvara */
@@ -2390,7 +2419,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.6.2";
+const APP_VERSION="v3.6.3";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -3016,6 +3045,7 @@ function renderLocal(){
   /* male smeđe gljive: jasno „ne beri” na samom vrhu */
   const mbg=top.slice(0,3).find(c=>{const gg=genusOf(c.s.lat);return c.rel>=0.08&&SMALL_BROWN.has(gg)&&gg!=="cortinarius"});
   if(mbg)h+='<div class="note dead" style="font-size:1.05rem"><strong>☠️ Ne beri: ovakve gljive se ne mogu odrediti sa slike.</strong><br><span style="font-size:.95rem">Male smeđe gljive, cjepače i patuljice teško razlikuju i stručnjaci, a među njima su smrtno otrovne vrste.</span></div>';
+  if(!LR.ev&&best&&best.s&&best.s.lat)lmEv("rod-"+String(best.s.lat).split(" ")[0].toLowerCase()+"-"+(unsure?"nesiguran":"siguran"));
   if(!LR.ev){LR.ev=true;lmEv("ishod-"+(LR.nfoto||1)+"foto-"+(unsure?"nesiguran":simLabel(best?best.rel:0)));
     /* zašto nesiguran i koje su fotografije dodane (samo nazivi polja, bez slika) */
     if(unsure&&best){if(LR.maxp<0.4)lmEv("razlog-niska-vjerojatnost");if(best.rel<0.35)lmEv("razlog-mala-prednost");if(second&&second.rel>=0.6*best.rel)lmEv("razlog-dvije-bliske")}
