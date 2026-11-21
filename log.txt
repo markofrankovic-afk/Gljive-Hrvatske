@@ -1,0 +1,13 @@
+[    0s] arhiva: 29 dana
+[    0s] preuzimam prognozu 2026-11-21
+[    8s]     20261121 iz google 8s
+[    9s] prognoza 2026-11-21 9s
+[    9s] dopunjavam 0 dana
+[    9s] visine…
+[   40s] maska…
+[   40s] ocjene…
+[   40s] gotovo: 2597 polja, prošlih dana iz arhive 21/21, 40s, 419 kB
+[   40s]   vrganji    danas max  35  sr  15.3
+[   40s]   lisicarke  danas max  20  sr   1.2
+[   40s]   suncanice  danas max  40  sr  13.0
+[   40s]   smrcci     danas max   0  sr   0.0
