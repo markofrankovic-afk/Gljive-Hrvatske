@@ -331,11 +331,11 @@ form.log .full{grid-column:1/-1}
     <div class="panel">
       <h2>1. Fotografiraj gljivu u tri koraka</h2>
       <p class="small">Dodirni polje ili „Slikaj” za kameru, a „Galerija” za već snimljene slike.</p>
-      <ul class="photo-tips small"><li>Cijela gljiva u kadru i oštra, bez prstiju preko klobuka.</li><li>Dnevno svjetlo, bez bljeskalice i bez jake sjene.</li><li>Jedna gljiva na slici, mirna pozadina: list, mahovina ili dlan.</li><li><strong>Dodaj i donju stranu.</strong> S dvije fotografije sigurne greške su upola rjeđe; prerez pokazuje mijenja li meso boju.</li></ul>
+      <ul class="photo-tips small"><li>Cijela gljiva u kadru i oštra, bez prstiju preko klobuka.</li><li>Dnevno svjetlo, bez bljeskalice i bez jake sjene.</li><li>Jedna gljiva na slici, mirna pozadina: list, mahovina ili dlan.</li><li><strong>Dodaj i donju stranu.</strong> S dvije fotografije sigurne greške su upola rjeđe. Prerez i dno su po želji: dno stručka otkriva vrećicu muhara, a prerez mijenja li meso boju ili pušta li mlijeko.</li></ul>
       <div class="slots" id="drop">
         <div class="slot" data-slot="0"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="0" aria-label="Korak 1: klobuk odozgo – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>1. Odozgo</strong><span>klobuk, cijela gljiva u kadru</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="0" aria-label="Korak 1: klobuk odozgo – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="0" aria-label="Korak 1: klobuk odozgo – odaberi iz galerije"></label></div></div>
         <div class="slot" data-slot="1"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="1" aria-label="Korak 2: donja strana – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>2. Odozdo</strong><span>listići, cjevčice ili bodlje</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="1" aria-label="Korak 2: donja strana – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="1" aria-label="Korak 2: donja strana – odaberi iz galerije"></label></div></div>
-        <div class="slot" data-slot="2"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>3. Prerez i dno</strong><span>uzdužno prerezana, s dnom stručka</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="2" aria-label="Korak 3: prerez i dno – odaberi iz galerije"></label></div></div>
+        <div class="slot" data-slot="2"><label class="slot-cam"><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj"><span class="slot-img"></span><span class="slot-txt"><strong>3. Prerez i dno (po želji)</strong><span>dno stručka kod muhara, prerez kod vrganja i mliječnica</span></span></label><div class="slot-btns"><label class="sb"><span aria-hidden="true">📷</span><span>Slikaj</span><input type="file" accept="image/*" capture="environment" data-slot="2" aria-label="Korak 3: prerez i dno – slikaj kamerom"></label><label class="sb"><span aria-hidden="true">🖼️</span><span>Galerija</span><input type="file" accept="image/*" data-slot="2" aria-label="Korak 3: prerez i dno – odaberi iz galerije"></label></div></div>
       </div>
       <span class="small" id="dropHint"></span>
       <div class="note" id="photoWarn" hidden></div>
@@ -2419,7 +2419,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.6.3";
+const APP_VERSION="v3.6.4";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2817,7 +2817,7 @@ async function classify(files){
   const{session,meta,labels}=await ensureModel();
   /* svaka fotografija: prosjek pogleda; više fotografija: množenje (geometrijska sredina), jer na nalazima
      s dvije fotografije daje 2 boda veću točnost od prosjeka uz jednak broj sigurnih grešaka (studeni 2026.) */
-  let lg=null;const views=lmViews();
+  let lg=null;const views=lmViews();window.LM_TOP=[];
   for(const f of files){
     const img=await loadImg(f);let one=null;
     for(const v of views){
@@ -2825,6 +2825,7 @@ async function classify(files){
       const T=meta.temperature||1,raw=out[session.outputNames[0]].data,p=softmax(T===1?raw:raw.map(v=>v/T));
       if(!one)one=new Float64Array(p.length);for(let i=0;i<p.length;i++)one[i]+=p[i]/views.length;
     }
+    {let bi=0;for(let i=1;i<one.length;i++)if(one[i]>one[bi])bi=i;window.LM_TOP.push(bi)}
     if(!lg)lg=new Float64Array(one.length);for(let i=0;i<one.length;i++)lg[i]+=Math.log(one[i]+1e-9)/files.length;
   }
   let sum=0;const acc=new Float32Array(lg.length);for(let i=0;i<lg.length;i++){acc[i]=Math.exp(lg[i]);sum+=acc[i]}
@@ -2872,7 +2873,8 @@ const PAIRS=[
  {a:["krasnica-zelena"],b:["pupavka"],k:"volva"},
  /* iz testa: otrovne vrste koje model zamijeni s jestivim */
  {a:["jestiva-krasnica","x-russula-aurora","x-russula-paludosa"],b:["x-russula-nobilis"],k:"ok"},
- {a:["stoglava-srastenica"],b:["x-tricholoma-ustale"],k:"pp_ust",q:"Kako rastu i kakvi su listići?",oa:"U gustom busenu, stručci srastaju u dnu; listići bjelkasti do sivkasti",ob:"Pojedinačno ili u skupini, ne srastaju; listići s hrđavosmeđim mrljama, okus gorak"}
+ {a:["stoglava-srastenica"],b:["x-tricholoma-ustale"],k:"pp_ust",q:"Kako rastu i kakvi su listići?",oa:"U gustom busenu, stručci srastaju u dnu; listići bjelkasti do sivkasti",ob:"Pojedinačno ili u skupini, ne srastaju; listići s hrđavosmeđim mrljama, okus gorak"},
+ {a:["x-hypholoma-capnoides"],b:["sumporaca"],k:"pp_hyp",q:"Kakvi su listići i okus? Okusi mrvicu klobuka i ispljuni.",oa:"Listići sivkasti do sivoljubičasti, okus blag; raste na panjevima četinjača",ob:"Listići sumpornožuti do zelenkasti, okus jako gorak"}
 ];
 const PAIRQ=Object.fromEntries(PAIRS.filter(p=>p.q).map(p=>[p.k,p]));
 function pairSide(p,id){return p.a.includes(id)?"a":p.b.includes(id)?"b":null}
@@ -3073,6 +3075,14 @@ function renderLocal(){
   h+='<p class="small">Vlastiti model Gljiva Hrvatske, učen na oko 155.000 fotografija s iNaturalista i Wikimedia Commonsa za 601 vrstu iz atlasa. Rijetke vrste bez dovoljno fotografija ne zna; za njih koristi ključ. <a href="#" onclick="zasluge();return false">Zasluge</a></p>';
   $("#lmOut").innerHTML=h;
 }
+/* anonimno: slažu li se fotografije oko najvjerojatnije vrste i koja odskače (bez vrste, bez slike) */
+function agreeEv(t,si){
+  const nm=["odozgo","odozdo","prerez"],n=t.length;if(n<2)return null;
+  if(n===2)return t[0]===t[1]?"slaganje-2od2":"slaganje-razlicite-"+(nm[si[0]]||"?")+"+"+(nm[si[1]]||"?");
+  if(t[0]===t[1]&&t[1]===t[2])return "slaganje-3od3";
+  for(let k=0;k<3;k++){const o=t.filter((_,j)=>j!==k);if(o[0]===o[1])return "slaganje-2od3-odskace-"+(nm[si[k]]||"?")}
+  return "slaganje-nijedna";
+}
 async function runLocal(){
   if(!photos.length){lmStatus("Prvo dodaj barem jednu fotografiju.");return}
   const btn=$("#lmRun");btn.disabled=true;
@@ -3081,6 +3091,7 @@ async function runLocal(){
     const seen=preds.reduce((a,r)=>a+r.p,0);
     LR=Object.assign(buildCandidates(preds),{qa:{},maxp:preds[0]?preds[0].p:0,restMass:Math.max(0,1-seen),nfoto:Math.min(3,photos.length),ev:false});
     lmEv("prepoznaj-"+LR.nfoto+"foto");
+    try{lmEv(agreeEv(window.LM_TOP||[],photos.map(p=>slots.indexOf(p))))}catch(e){}
     lmStatus("Gotovo. Rezultat ovisi o kvaliteti fotografije.");
     renderLocal();
   }catch(e){
