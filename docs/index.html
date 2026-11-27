@@ -2419,7 +2419,7 @@ function zasluge(){
 }
 setTimeout(()=>{if($("#sheet").hidden)whatsNew(false)},1200);
 /* ================= Samo u mobilnoj verziji (PWA) ================= */
-const APP_VERSION="v3.6.4";
+const APP_VERSION="v3.6.5";
 
 /* ---------- 1. Indeks sezone po regijama (Open-Meteo, bez ključa) ---------- */
 /* Mjerne točke: [ključ regije, naziv, lat, lon]; regija može imati više točaka */
@@ -2812,6 +2812,7 @@ function viewTensor(img,meta,view){
 }
 async function imageTensor(file,meta){return viewTensor(await loadImg(file),meta,{})}
 function softmax(a){let mx=-Infinity;for(const v of a)if(v>mx)mx=v;let s=0;const o=new Float32Array(a.length);for(let i=0;i<a.length;i++){o[i]=Math.exp(a[i]-mx);s+=o[i]}for(let i=0;i<o.length;i++)o[i]/=s;return o}
+const LM_CAL_T=0.7;
 function lmViews(){return LM_OPTS.tta?(LM_OPTS.views||[{},{flip:1},{zoom:1.4},{zoom:0.85},{zoom:0.7}]):[{}]}
 async function classify(files){
   const{session,meta,labels}=await ensureModel();
@@ -2828,10 +2829,11 @@ async function classify(files){
     {let bi=0;for(let i=1;i<one.length;i++)if(one[i]>one[bi])bi=i;window.LM_TOP.push(bi)}
     if(!lg)lg=new Float64Array(one.length);for(let i=0;i<one.length;i++)lg[i]+=Math.log(one[i]+1e-9)/files.length;
   }
-  let sum=0;const acc=new Float32Array(lg.length);for(let i=0;i<lg.length;i++){acc[i]=Math.exp(lg[i]);sum+=acc[i]}
-  for(let i=0;i<acc.length;i++)acc[i]/=sum;
-  const idx=[...acc.keys()].sort((a,b)=>acc[b]-acc[a]).slice(0,20);
-  return idx.map(i=>({lat:labels[i],p:acc[i],s:atlasFor(labels[i])}));
+  const top20=T=>{let mx=-Infinity;for(const v of lg)if(v>mx)mx=v;let sum=0;const acc=new Float64Array(lg.length);
+    for(let i=0;i<lg.length;i++){acc[i]=Math.exp((lg[i]-mx)/T);sum+=acc[i]}for(let i=0;i<acc.length;i++)acc[i]/=sum;
+    return [...acc.keys()].sort((a,b)=>acc[b]-acc[a]).slice(0,20).map(i=>({lat:labels[i],p:acc[i],s:atlasFor(labels[i])}))};
+  /* model je na testu bio preoprezan (kad kaže 60 %, točan je u 94 %); T=0,7 daje postotke koji odgovaraju stvarnosti (studeni 2026.) */
+  const r=top20(1);r.cal=top20(LM_CAL_T);return r;
 }
 /* sezona: vrste izvan sezone dobivaju manju težinu; otrovne nikad, da upozorenje ostane.
    Isključeno: na testnim fotografijama nije donijelo poboljšanje (listopad 2026). */
@@ -2874,6 +2876,8 @@ const PAIRS=[
  /* iz testa: otrovne vrste koje model zamijeni s jestivim */
  {a:["jestiva-krasnica","x-russula-aurora","x-russula-paludosa"],b:["x-russula-nobilis"],k:"ok"},
  {a:["stoglava-srastenica"],b:["x-tricholoma-ustale"],k:"pp_ust",q:"Kako rastu i kakvi su listići?",oa:"U gustom busenu, stručci srastaju u dnu; listići bjelkasti do sivkasti",ob:"Pojedinačno ili u skupini, ne srastaju; listići s hrđavosmeđim mrljama, okus gorak"},
+ {a:["x-hypholoma-capnoides"],b:["galerina"],k:"pp_hypgal",q:"Ima li stručak prsten i kakvi su listići? Ostavi klobuk na papiru 2–3 sata za otisak spora.",oa:"Bez pravog prstena; listići sivkasti do sivoljubičasti, otisak spora ljubičastosmeđ",ob:"Tanak prsten na stručku; listići i otisak spora hrđavosmeđi"},
+ {a:["vukovo-meso"],b:["mekana-rupicarka"],k:"pp_fis",q:"Kakvo je meso kad ga prerežeš?",oa:"Sočno, crveno i prošarano kao sirovo meso, pušta crvenkast sok; raste na hrastu ili kestenu",ob:"Mekano i suho, cimetasto narančasto, bez soka"},
  {a:["x-hypholoma-capnoides"],b:["sumporaca"],k:"pp_hyp",q:"Kakvi su listići i okus? Okusi mrvicu klobuka i ispljuni.",oa:"Listići sivkasti do sivoljubičasti, okus blag; raste na panjevima četinjača",ob:"Listići sumpornožuti do zelenkasti, okus jako gorak"}
 ];
 const PAIRQ=Object.fromEntries(PAIRS.filter(p=>p.q).map(p=>[p.k,p]));
@@ -3028,6 +3032,13 @@ function nextStep(top,danger,qs){
 /* anonimni brojač (GoatCounter u PWA verziji): bez fotografija, lokacije i osobnih podataka */
 function lmEv(n){try{if(window.gcEv)window.gcEv(n)}catch(e){}}
 const simLabel=r=>r>=0.6?"visoka":r>=0.3?"srednja":"niska";
+/* odluka siguran/nesiguran na dosadašnjoj ljestvici, provjerenoj na testu; prikaz koristi ispravljene postotke */
+function lmDecide(){
+  if(!LR||!LR.dec)return null;const D=LR;LR=D.dec;LR.qa=D.qa;
+  try{applyAnswers();const b=LR.cands[0],s=LR.cands[1];
+    return {u:!b||LR.maxp<0.4||b.rel<0.35||(s&&s.rel>=0.6*b.rel),id:b?b.s.id:null,maxp:LR.maxp,rel:b?b.rel:0,rel2:s?s.rel:0}}
+  finally{LR=D}
+}
 function renderLocal(){
   applyAnswers();
   const top=LR.cands.filter(c=>c.rel>=0.04).slice(0,4);
@@ -3035,7 +3046,8 @@ function renderLocal(){
   const best=LR.cands[0];
   /* nesigurno: model nema jasan vodeći prijedlog ili su prva dva blizu */
   const second=LR.cands[1];
-  const unsure=!best||LR.maxp<0.4||best.rel<0.35||(second&&second.rel>=0.6*best.rel);
+  const DEC=lmDecide();
+  const unsure=DEC?(DEC.u||!best||DEC.id!==best.s.id):(!best||LR.maxp<0.4||best.rel<0.35||(second&&second.rel>=0.6*best.rel));
   /* rod umjesto vrste: kad vodeće vrste dijele rod, a nijedna nije jasno ispred */
   let rodTxt="";
   if(unsure&&best){const g=genusOf(best.s.lat),same=top.filter(c=>genusOf(c.s.lat)===g);const gm=same.reduce((a,c)=>a+c.rel,0);
@@ -3050,7 +3062,7 @@ function renderLocal(){
   if(!LR.ev&&best&&best.s&&best.s.lat)lmEv("rod-"+String(best.s.lat).split(" ")[0].toLowerCase()+"-"+(unsure?"nesiguran":"siguran"));
   if(!LR.ev){LR.ev=true;lmEv("ishod-"+(LR.nfoto||1)+"foto-"+(unsure?"nesiguran":simLabel(best?best.rel:0)));
     /* zašto nesiguran i koje su fotografije dodane (samo nazivi polja, bez slika) */
-    if(unsure&&best){if(LR.maxp<0.4)lmEv("razlog-niska-vjerojatnost");if(best.rel<0.35)lmEv("razlog-mala-prednost");if(second&&second.rel>=0.6*best.rel)lmEv("razlog-dvije-bliske")}
+    if(unsure&&best){const mp=DEC?DEC.maxp:LR.maxp,r1=DEC?DEC.rel:best.rel,r2=DEC?DEC.rel2:(second?second.rel:0);if(mp<0.4)lmEv("razlog-niska-vjerojatnost");if(r1<0.35)lmEv("razlog-mala-prednost");if(r2&&r2>=0.6*r1)lmEv("razlog-dvije-bliske")}
     {const sl=(typeof slots!=="undefined"&&slots)||[];const nm=["odozgo","odozdo","prerez"].filter((x,i)=>sl[i]);if(nm.length)lmEv("slike-"+nm.join("+"))}if(step&&step.html&&/data-lmslot="(\d)"/.test(step.html))lmEv("korak-slikaj-"+(step.html.includes('data-lmslot="1"')?"odozdo":"prerez"));if(mbg)lmEv("ishod-ne-beri")}
   if(rodTxt)h+='<div class="note"><strong>Vjerojatno '+rodTxt+', ali vrsta nije sigurna.</strong> Vrste ovog roda teško se razlikuju sa slike.'+stepHtml+'</div>';
   if(top.some(c=>genusOf(c.s.lat)==="cortinarius"&&c.rel>=0.1))h+='<div class="note dead"><strong>Moguća koprenka (Cortinarius).</strong> Koprenke se ne beru za jelo: među njima su smrtno otrovne vrste (npr. planinska koprenka) koje se sa slike ne mogu razlikovati od bezopasnih, a trovanje se javlja tek nakon nekoliko dana.</div>';
@@ -3063,7 +3075,7 @@ function renderLocal(){
   if(top.some(c=>c.s.psi))h+='<div class="note dead"><strong>Moguća psihoaktivna vrsta.</strong> Takve su gljive zakonom zabranjene i nisu jestive, a male smeđe gljive lako se zamijene sa smrtno otrovnim patuljicama. Ne beri ih.</div>';
   if(top.some(c=>["otrovna","smrtno"].includes(c.s.st))||danger.length)h+='<div class="warnbar">Među mogućim vrstama ima otrovnih. Ne beri za jelo bez provjere uživo.</div>';
   h+='<div class="note danger"><strong>Ovo je procjena sa slike, nije potvrda.</strong> Oznaka sličnosti pokazuje koliko gljiva nalikuje fotografijama vrste, ne sigurnost da je jestiva. Ne jedi ništa samo na temelju aplikacije: odnesi gljivu determinatoru.</div>';
-  h+='<span class="eyebrow">'+(unsure?'Nisam siguran: moguće vrste':'Najsličnije vrste')+'</span>'+top.map(c=>'<div class="cand"><span class="conf" title="'+Math.round(c.rel*100)+' % sličnosti">'+simLabel(c.rel)+'<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+carePill(c.s)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
+  h+='<span class="eyebrow">'+(unsure?'Nisam siguran: najvjerojatnije je jedna od ovih':'Najsličnije vrste')+'</span>'+(unsure&&top.length>=2?'<p class="small" style="margin:.2em 0 .4em">Na testu je točna vrsta među ponuđenima u oko 4 od 5 slučajeva. Pitanja ispod pomažu izabrati.</p>':'')+top.map(c=>'<div class="cand"><span class="conf" title="'+Math.round(c.rel*100)+' % sličnosti">'+simLabel(c.rel)+'<br><span style="font-size:.65rem;font-weight:400;opacity:.8">sličnost</span></span><div style="min-width:0;display:flex;flex-direction:column;gap:4px"><div><button class="chip" data-id="'+c.s.id+'"><strong>'+esc(c.s.hr)+'</strong></button> <span class="lat">'+esc(c.s.lat)+'</span></div><div>'+pill(c.s.st)+carePill(c.s)+(c.s.psi?' <span class="st st-smrtno">Psihoaktivna · zabranjena</span>':'')+(c.model?'':c.grp?' <span class="small">srodna vrsta, model ih teško razlikuje</span>':' <span class="small">dodano kao moguća zamjena</span>')+'</div><ul class="small" style="color:var(--ink)">'+c.s.kar.slice(0,3).map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>').join("");
   if(danger.length)h+='<span class="eyebrow">Opasne zamjene, provjeri ih</span>'+danger.map(c=>'<div class="note '+(c.s.st==="smrtno"?"dead":"danger")+'"><button class="chip" data-id="'+c.s.id+'">'+esc(c.s.hr)+'</button> '+pill(c.s.st)+' '+esc(c.s.nap&&!/^Izaziva trovanja/.test(c.s.nap)&&/zamijen|Zamjenjuje/.test(c.s.nap)?c.s.nap:(c.s.kar[0]||""))+'</div>').join("");
   const qrest=qs.filter(q=>!(step&&step.q&&step.q.k===q.k));
   if(qrest.length){
@@ -3089,7 +3101,8 @@ async function runLocal(){
   try{
     const preds=await classify(photos.map(p=>p.file));
     const seen=preds.reduce((a,r)=>a+r.p,0);
-    LR=Object.assign(buildCandidates(preds),{qa:{},maxp:preds[0]?preds[0].p:0,restMass:Math.max(0,1-seen),nfoto:Math.min(3,photos.length),ev:false});
+    const mk=pp=>Object.assign(buildCandidates(pp),{qa:{},maxp:pp[0]?pp[0].p:0,restMass:Math.max(0,1-pp.reduce((a,r)=>a+r.p,0)),nfoto:Math.min(3,photos.length),ev:false});
+    LR=mk(preds.cal||preds);if(preds.cal)LR.dec=mk(preds);
     lmEv("prepoznaj-"+LR.nfoto+"foto");
     try{lmEv(agreeEv(window.LM_TOP||[],photos.map(p=>slots.indexOf(p))))}catch(e){}
     lmStatus("Gotovo. Rezultat ovisi o kvaliteti fotografije.");
